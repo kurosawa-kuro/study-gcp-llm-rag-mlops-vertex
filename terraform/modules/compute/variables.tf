@@ -27,7 +27,7 @@ variable "service_account_email" {
   type = string
 }
 
-variable "gemini_api_key" {
+variable "google_ai_studio_api_key" {
   description = "Google AI Studio APIキー"
   type        = string
   sensitive   = true

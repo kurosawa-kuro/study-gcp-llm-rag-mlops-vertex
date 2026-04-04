@@ -58,5 +58,5 @@ module "compute" {
   bq_dataset            = module.data.bq_dataset_id
   es_secret_name        = module.elastic.secret_name
   service_account_email = module.iam.service_account_email
-  gemini_api_key        = var.gemini_api_key
+  google_ai_studio_api_key        = var.google_ai_studio_api_key
 }

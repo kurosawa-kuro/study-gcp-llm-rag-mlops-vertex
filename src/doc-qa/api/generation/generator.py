@@ -19,7 +19,7 @@ SYSTEM_PROMPT = """あなたは社内ドキュメントの専門家です。
 
 def generate_answer(query: str, context_docs: list[dict]) -> str:
     """検索結果を元に Gemini で回答を生成する。"""
-    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+    genai.configure(api_key=os.environ["GOOGLE_AI_STUDIO_API_KEY"])
 
     context = _build_context(context_docs)
     prompt = f"""【参考ドキュメント】

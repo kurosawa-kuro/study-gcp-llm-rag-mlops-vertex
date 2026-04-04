@@ -43,7 +43,7 @@ variable "elastic_cloud_api_key" {
 }
 
 # === Gemini ===
-variable "gemini_api_key" {
+variable "google_ai_studio_api_key" {
   description = "Google AI Studio APIキー"
   sensitive   = true
 }

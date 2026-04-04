@@ -95,7 +95,7 @@ resource "google_cloud_run_v2_service" "api" {
       }
 
       env {
-        name  = "GEMINI_API_KEY"
+        name  = "GOOGLE_AI_STUDIO_API_KEY"
         value = var.gemini_api_key
       }
 

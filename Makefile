@@ -149,9 +149,15 @@ qa-api-monitor:
 # =====================================================================
 # 評価（RAG品質評価）
 # =====================================================================
-.PHONY: eval eval-baseline eval-search-patterns
+.PHONY: eval eval-baseline eval-search-patterns eval-test shared-test
 
 EVAL_DIR := scripts/eval
+
+shared-test:
+	PYTHONPATH=shared python3 -m pytest -v shared/tests/
+
+eval-test:
+	PYTHONPATH=scripts/eval python3 -m pytest -v scripts/eval/tests/
 
 eval:  ## 評価実行（デフォルト: hybrid検索）
 	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/evaluate.py
@@ -197,7 +203,7 @@ destroy-all: tf-destroy  ## 全GCPリソース削除
 
 deploy: ingestion-deploy qa-api-deploy  ## アプリのみ再デプロイ（build→push→update）
 
-test: ingestion-test qa-api-test
+test: ingestion-test qa-api-test shared-test eval-test
 
 help:
 	@echo "=== 全体操作 ==="

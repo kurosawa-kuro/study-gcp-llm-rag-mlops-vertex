@@ -52,6 +52,7 @@ class TestGenerateReport:
         report = generate_report([r1, r2])
         assert "差分" in report
 
-    def test_empty_results_raises(self):
-        with pytest.raises(TypeError):
-            generate_report([])
+    def test_empty_results(self):
+        report = generate_report([])
+        assert "検索パターン比較レポート" in report
+        assert "比較対象の結果がありません" in report

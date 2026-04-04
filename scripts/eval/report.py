@@ -40,6 +40,10 @@ def generate_report(results: list[dict]) -> str:
     lines = []
     lines.append("\n=== 検索パターン比較レポート ===\n")
 
+    if not results:
+        lines.append("比較対象の結果がありません。")
+        return "\n".join(lines)
+
     labels = [r.get("search_type", "unknown") for r in results]
     col_width = max(14, *(len(label) + 2 for label in labels))
     header = f"{'指標':<14}" + "".join(f"{label:<{col_width}}" for label in labels)

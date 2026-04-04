@@ -226,3 +226,4 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+.claude/settings.local.json.tmp.518737.1775287909095

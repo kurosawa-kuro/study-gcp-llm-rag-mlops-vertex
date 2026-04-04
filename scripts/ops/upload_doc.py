@@ -1,11 +1,11 @@
 """GCS へドキュメントをアップロードする
 
-Usage: python scripts/upload_doc.py <file_or_directory> [...]
+Usage: python scripts/ops/upload_doc.py <file_or_directory> [...]
 """
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "shared"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "shared"))
 
 from core import logger, get, run
 

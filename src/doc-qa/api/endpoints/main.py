@@ -18,10 +18,10 @@ from elasticsearch import Elasticsearch
 from pydantic import BaseModel
 
 from config import get, setup_logging
-from embedder import embed_query
-from retriever import hybrid_search
-from reranker import reciprocal_rank_fusion
-from generator import generate_answer
+from search.embedder import embed_query
+from search.retriever import hybrid_search
+from search.reranker import reciprocal_rank_fusion
+from generation.generator import generate_answer
 
 logger = setup_logging("doc-qa")
 

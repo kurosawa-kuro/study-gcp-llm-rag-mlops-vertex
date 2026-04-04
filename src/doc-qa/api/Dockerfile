@@ -13,4 +13,4 @@ COPY src/doc-qa/api/ .
 
 ENV CONFIG_PATH=/app/config/application.yml
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "endpoints.main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -1,13 +1,13 @@
 """QA API にクエリを送信する
 
-Usage: python scripts/query.py "質問テキスト" [top_k]
+Usage: python scripts/ops/query.py "質問テキスト" [top_k]
 """
 
 import json
 import sys
 import urllib.request
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "shared"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "shared"))
 
 from core import logger, gcloud, REGION
 

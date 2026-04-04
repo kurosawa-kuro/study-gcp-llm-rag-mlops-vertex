@@ -3,7 +3,7 @@
 import json
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "shared"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "shared"))
 
 from core import logger, load_env, gcloud, notify_discord, REGION
 

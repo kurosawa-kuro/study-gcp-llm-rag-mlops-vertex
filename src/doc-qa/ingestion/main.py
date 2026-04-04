@@ -16,11 +16,11 @@ import vertexai
 from google.cloud import bigquery, secretmanager, storage
 
 from config import get, setup_logging
-from chunker import split_into_chunks
-from embedder import generate_embeddings
-from es_writer import create_es_client, write_chunks_to_es
-from extractor import extract_text
-from bq_writer import write_chunks_to_bq
+from extract.extractor import extract_text
+from extract.chunker import split_into_chunks
+from embed.embedder import generate_embeddings
+from store.bq_writer import write_chunks_to_bq
+from store.es_writer import create_es_client, write_chunks_to_es
 
 logger = setup_logging("doc-qa")
 

@@ -2,8 +2,8 @@
 
 import pytest
 
-from chunker import split_into_chunks
-from extractor import _extract_txt
+from extract.chunker import split_into_chunks
+from extract.extractor import _extract_txt
 from pathlib import Path
 import tempfile
 
@@ -81,7 +81,7 @@ class TestChunker:
 
 class TestBqWriter:
     def test_insert_with_retry_success(self, mocker):
-        from bq_writer import _insert_with_retry
+        from store.bq_writer import _insert_with_retry
 
         mock_client = mocker.MagicMock()
         mock_client.insert_rows_json.return_value = []
@@ -90,9 +90,9 @@ class TestBqWriter:
         mock_client.insert_rows_json.assert_called_once()
 
     def test_insert_with_retry_retries(self, mocker):
-        from bq_writer import _insert_with_retry
+        from store.bq_writer import _insert_with_retry
 
-        mocker.patch("bq_writer.time.sleep")
+        mocker.patch("store.bq_writer.time.sleep")
         mock_client = mocker.MagicMock()
         mock_client.insert_rows_json.side_effect = [
             Exception("transient"),
@@ -103,9 +103,9 @@ class TestBqWriter:
         assert mock_client.insert_rows_json.call_count == 2
 
     def test_insert_with_retry_exhausted(self, mocker):
-        from bq_writer import _insert_with_retry
+        from store.bq_writer import _insert_with_retry
 
-        mocker.patch("bq_writer.time.sleep")
+        mocker.patch("store.bq_writer.time.sleep")
         mock_client = mocker.MagicMock()
         mock_client.insert_rows_json.side_effect = Exception("persistent")
 

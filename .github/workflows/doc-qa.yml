@@ -27,7 +27,7 @@ jobs:
       - name: Run tests
         run: |
           cd src/doc-qa/${{ matrix.component }}
-          PYTHONPATH=.:../../../shared pytest -v test_main.py
+          PYTHONPATH=.:../../../shared pytest -v tests/
 
   build-and-deploy:
     needs: test

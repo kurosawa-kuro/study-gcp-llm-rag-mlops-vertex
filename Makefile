@@ -81,7 +81,7 @@ INGESTION_IMAGE := $(IMAGE_BASE)/doc-qa-ingestion:$(TAG)
 .PHONY: ingestion-test ingestion-build ingestion-push ingestion-deploy ingestion-run ingestion-logs
 
 ingestion-test:
-	cd $(INGESTION_DIR) && PYTHONPATH=.:../../../shared python -m pytest -v test_main.py
+	cd $(INGESTION_DIR) && PYTHONPATH=.:../../../shared python -m pytest -v tests/
 
 ingestion-build:
 	docker build -f $(INGESTION_DIR)/Dockerfile -t $(INGESTION_IMAGE) .
@@ -107,7 +107,7 @@ QA_API_IMAGE := $(IMAGE_BASE)/doc-qa-api:$(TAG)
 .PHONY: qa-api-test qa-api-build qa-api-push qa-api-deploy qa-api-logs qa-api-url qa-api-monitor
 
 qa-api-test:
-	cd $(QA_API_DIR) && PYTHONPATH=.:../../../shared python -m pytest -v test_main.py
+	cd $(QA_API_DIR) && PYTHONPATH=.:../../../shared python -m pytest -v tests/
 
 qa-api-build:
 	docker build -f $(QA_API_DIR)/Dockerfile -t $(QA_API_IMAGE) .
@@ -126,7 +126,7 @@ qa-api-url:
 	@gcloud run services describe doc-qa-api --region $(REGION) --format 'value(status.url)'
 
 qa-api-monitor:
-	python3 scripts/monitor_qa_api.py
+	python3 scripts/monitor/qa_api.py
 
 # =====================================================================
 # 統合コマンド

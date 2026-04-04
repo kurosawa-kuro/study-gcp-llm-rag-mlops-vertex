@@ -1,7 +1,7 @@
 """QA API 単体テスト"""
 
 import pytest
-from reranker import reciprocal_rank_fusion
+from search.reranker import reciprocal_rank_fusion
 
 
 # === reranker テスト ===
@@ -56,7 +56,7 @@ class TestHealth:
 
 class TestGenerator:
     def test_build_context(self):
-        from generator import _build_context
+        from generation.generator import _build_context
 
         docs = [
             {"doc_name": "就業規則.pdf", "page_number": 5, "content": "有給休暇は..."},

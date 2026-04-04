@@ -230,3 +230,7 @@ help:
 	@echo "  make eval               評価実行（hybrid検索）"
 	@echo "  make eval-baseline      ベースライン記録"
 	@echo "  make eval-search-patterns 検索パターン比較"
+	@echo ""
+	@echo "=== フロントエンド ==="
+	@echo "  cd src/frontend && npm run dev    開発サーバー"
+	@echo "  cd src/frontend && npm run build  ビルド → src/api/static/"

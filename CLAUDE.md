@@ -25,14 +25,17 @@ GCPプロジェクト: `mlops-dev-a`、リージョン: `asia-northeast1`
 [Cloud Scheduler]
   └── 毎日 9:00 JST に自動Ingestion実行
             ↓
-[Cloud Run Service（QA API）]
-  ├── POST /query → ハイブリッド検索 → RRFリランク → Gemini回答生成
+[Cloud Run Service（QA API + React SPA）]
+  ├── GET /        → React TypeScript SPA（QA検索 / Upload / Eval）
+  ├── POST /query  → ハイブリッド検索 → RRFリランク → Gemini回答生成
   ├── POST /ingest → Cloud Run Jobs API で Ingestion Job 非同期実行
-  └── GET /health → ヘルスチェック
+  └── GET /health  → ヘルスチェック
 ```
 
 - **src/ingestion/**: Cloud Run Job - ドキュメント取込（extract/ embed/ store/）
-- **src/api/**: Cloud Run Service - QA API（endpoints/ search/ generation/）
+- **src/api/**: Cloud Run Service - QA API + SPA配信（endpoints/ search/ generation/ static/）
+- **src/frontend/**: React TypeScript SPA（Vite、ビルド出力 → src/api/static/）
+- **src/pipeline/**: Vertex AI Pipeline（RAG評価パイプライン）
 - **shared/config.py**: 共通設定ローダー（application.yml キャッシュ・ロギング）
 - **shared/core.py**: スクリプト基盤（gcloud・run・notify_discord・load_env）
 - **scripts/**: 運用スクリプト（eval/ monitor/ ops/ setup/）
@@ -59,9 +62,10 @@ shared/core.py        scripts/*/*.py          ← from core import ...
 
 ## Tech Stack
 
-- **LLM/RAG**: Vertex AI Embedding API, Vertex AI Gemini, BigQuery Vector Search
-- **検索**: Elasticsearch（kuromoji）+ BigQuery Vector Search のハイブリッド
+- **LLM/RAG**: Vertex AI Embedding API, Google AI Studio Gemini（google-genai SDK）, BigQuery Vector Search
+- **検索**: Elasticsearch（kuromoji アナライザー）+ BigQuery Vector Search のハイブリッド
 - **API**: FastAPI (Cloud Run Service)
+- **フロントエンド**: React TypeScript + Vite（FastAPI と同一ポートで配信）
 - **IaC**: Terraform（モジュール分離: data/compute/elastic/registry/iam）
 - **CI/CD**: GitHub Actions（doc-qa + Terraform）
 - **監視**: Discord通知
@@ -72,7 +76,7 @@ shared/core.py        scripts/*/*.py          ← from core import ...
 
 build context はプロジェクトルート。`-f` で Dockerfile を指定:
 ```bash
-docker build -f src/api/Dockerfile -t doc-qa-api .
+docker build -f src/api/Dockerfile -t doc-qa-api .           # multi-stage: React ビルド + Python
 docker build -f src/ingestion/Dockerfile -t doc-qa-ingestion .
 ```
 

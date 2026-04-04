@@ -31,8 +31,8 @@ GCPプロジェクト: `mlops-dev-a`、リージョン: `asia-northeast1`
   └── GET /health → ヘルスチェック
 ```
 
-- **src/doc-qa/ingestion/**: Cloud Run Job - ドキュメント取込（extract/ embed/ store/）
-- **src/doc-qa/api/**: Cloud Run Service - QA API（endpoints/ search/ generation/）
+- **src/ingestion/**: Cloud Run Job - ドキュメント取込（extract/ embed/ store/）
+- **src/api/**: Cloud Run Service - QA API（endpoints/ search/ generation/）
 - **shared/config.py**: 共通設定ローダー（application.yml キャッシュ・ロギング）
 - **shared/core.py**: スクリプト基盤（gcloud・run・notify_discord・load_env）
 - **scripts/**: 運用スクリプト（eval/ monitor/ ops/ setup/）
@@ -72,8 +72,8 @@ shared/core.py        scripts/*/*.py          ← from core import ...
 
 build context はプロジェクトルート。`-f` で Dockerfile を指定:
 ```bash
-docker build -f src/doc-qa/api/Dockerfile -t doc-qa-api .
-docker build -f src/doc-qa/ingestion/Dockerfile -t doc-qa-ingestion .
+docker build -f src/api/Dockerfile -t doc-qa-api .
+docker build -f src/ingestion/Dockerfile -t doc-qa-ingestion .
 ```
 
 ## Language

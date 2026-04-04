@@ -10,12 +10,12 @@ IMAGE_BASE := $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(REPO)
 TF_DIR := terraform
 TF_SA := terraform@$(PROJECT_ID).iam.gserviceaccount.com
 COMPUTE_SA := $(shell gcloud projects describe $(PROJECT_ID) --format='value(projectNumber)' 2>/dev/null)-compute@developer.gserviceaccount.com
-INGESTION_DIR := src/doc-qa/ingestion
+INGESTION_DIR := src/ingestion
 INGESTION_IMAGE := $(IMAGE_BASE)/doc-qa-ingestion:$(TAG)
-QA_API_DIR := src/doc-qa/api
+QA_API_DIR := src/api
 QA_API_IMAGE := $(IMAGE_BASE)/doc-qa-api:$(TAG)
 EVAL_DIR := scripts/eval
-EVAL_PIPELINE_DIR := src/doc-qa/pipeline
+EVAL_PIPELINE_DIR := src/pipeline
 EVAL_IMAGE := $(IMAGE_BASE)/doc-qa-eval:$(TAG)
 
 # =====================================================================
@@ -93,7 +93,7 @@ tf-validate: tf-init
 .PHONY: ingestion-test ingestion-build ingestion-push ingestion-deploy ingestion-run ingestion-logs
 
 ingestion-test:
-	cd $(INGESTION_DIR) && PYTHONPATH=.:../../../shared python3 -m pytest -v tests/
+	cd $(INGESTION_DIR) && PYTHONPATH=.:../../shared python3 -m pytest -v tests/
 
 ingestion-build:
 	docker build -f $(INGESTION_DIR)/Dockerfile -t $(INGESTION_IMAGE) .
@@ -116,7 +116,7 @@ ingestion-logs:
 .PHONY: qa-api-test qa-api-build qa-api-push qa-api-deploy qa-api-logs qa-api-url qa-api-monitor
 
 qa-api-test:
-	cd $(QA_API_DIR) && PYTHONPATH=.:../../../shared python3 -m pytest -v tests/
+	cd $(QA_API_DIR) && PYTHONPATH=.:../../shared python3 -m pytest -v tests/
 
 qa-api-build:
 	docker build -f $(QA_API_DIR)/Dockerfile -t $(QA_API_IMAGE) .
@@ -149,16 +149,16 @@ eval-test:
 	PYTHONPATH=scripts/eval python3 -m pytest -v scripts/eval/tests/
 
 eval:
-	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/evaluate.py
+	PYTHONPATH=shared:src/api python3 $(EVAL_DIR)/evaluate.py
 
 eval-baseline:
-	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/evaluate.py --save-as baseline
+	PYTHONPATH=shared:src/api python3 $(EVAL_DIR)/evaluate.py --save-as baseline
 
 eval-search-patterns:
-	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/evaluate.py --search-type vector --save-as vector
-	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/evaluate.py --search-type elasticsearch --save-as elasticsearch
-	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/evaluate.py --search-type hybrid --save-as hybrid
-	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/report.py --results $(EVAL_DIR)/results/vector_*.json $(EVAL_DIR)/results/elasticsearch_*.json $(EVAL_DIR)/results/hybrid_*.json
+	PYTHONPATH=shared:src/api python3 $(EVAL_DIR)/evaluate.py --search-type vector --save-as vector
+	PYTHONPATH=shared:src/api python3 $(EVAL_DIR)/evaluate.py --search-type elasticsearch --save-as elasticsearch
+	PYTHONPATH=shared:src/api python3 $(EVAL_DIR)/evaluate.py --search-type hybrid --save-as hybrid
+	PYTHONPATH=shared:src/api python3 $(EVAL_DIR)/report.py --results $(EVAL_DIR)/results/vector_*.json $(EVAL_DIR)/results/elasticsearch_*.json $(EVAL_DIR)/results/hybrid_*.json
 
 # =====================================================================
 # 評価パイプライン（Vertex AI Pipeline）

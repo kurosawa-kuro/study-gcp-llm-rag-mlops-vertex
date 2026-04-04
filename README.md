@@ -18,7 +18,7 @@ GCSにドキュメントをアップロードするだけでAIが根拠ドキュ
 ## ディレクトリ構成
 
 ```
-├── src/doc-qa/
+├── src/
 │   ├── common/             # 共有ライブラリ（config.py + core.py）
 │   ├── ingestion/          # ドキュメント取込パイプライン
 │   └── api/                # QA API（FastAPI）

@@ -193,4 +193,4 @@ def spa_catchall(path: str):
     index = _STATIC_DIR / "index.html"
     if _STATIC_DIR.is_dir() and index.is_file():
         return FileResponse(index)
-    return {"detail": "Frontend not built. Run: cd src/doc-qa/frontend && npm run build"}
+    return {"detail": "Frontend not built. Run: cd src/frontend && npm run build"}

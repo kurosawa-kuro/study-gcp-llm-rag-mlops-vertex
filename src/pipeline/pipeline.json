@@ -1,0 +1,875 @@
+{
+  "components": {
+    "comp-compare-champion": {
+      "executorLabel": "exec-compare-champion",
+      "inputDefinitions": {
+        "parameters": {
+          "challenger_model_path": {
+            "parameterType": "STRING"
+          },
+          "challenger_rmse": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "discord_webhook_url": {
+            "parameterType": "STRING"
+          },
+          "improvement_threshold": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "project_id": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "parameters": {
+          "champion_rmse": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "should_deploy": {
+            "parameterType": "STRING"
+          }
+        }
+      }
+    },
+    "comp-condition-1": {
+      "dag": {
+        "tasks": {
+          "compare-champion": {
+            "cachingOptions": {
+              "enableCache": true
+            },
+            "componentRef": {
+              "name": "comp-compare-champion"
+            },
+            "inputs": {
+              "parameters": {
+                "challenger_model_path": {
+                  "componentInputParameter": "pipelinechannel--evaluate-model-model_gcs_path"
+                },
+                "challenger_rmse": {
+                  "componentInputParameter": "pipelinechannel--evaluate-model-rmse"
+                },
+                "discord_webhook_url": {
+                  "componentInputParameter": "pipelinechannel--discord_webhook_url"
+                },
+                "improvement_threshold": {
+                  "componentInputParameter": "pipelinechannel--improvement_threshold"
+                },
+                "project_id": {
+                  "componentInputParameter": "pipelinechannel--project_id"
+                }
+              }
+            },
+            "taskInfo": {
+              "name": "compare-champion"
+            }
+          },
+          "condition-2": {
+            "componentRef": {
+              "name": "comp-condition-2"
+            },
+            "dependentTasks": [
+              "compare-champion"
+            ],
+            "inputs": {
+              "parameters": {
+                "pipelinechannel--compare-champion-should_deploy": {
+                  "taskOutputParameter": {
+                    "outputParameterKey": "should_deploy",
+                    "producerTask": "compare-champion"
+                  }
+                },
+                "pipelinechannel--discord_webhook_url": {
+                  "componentInputParameter": "pipelinechannel--discord_webhook_url"
+                },
+                "pipelinechannel--endpoint_display_name": {
+                  "componentInputParameter": "pipelinechannel--endpoint_display_name"
+                },
+                "pipelinechannel--evaluate-model-mae": {
+                  "componentInputParameter": "pipelinechannel--evaluate-model-mae"
+                },
+                "pipelinechannel--evaluate-model-model_gcs_path": {
+                  "componentInputParameter": "pipelinechannel--evaluate-model-model_gcs_path"
+                },
+                "pipelinechannel--evaluate-model-rmse": {
+                  "componentInputParameter": "pipelinechannel--evaluate-model-rmse"
+                },
+                "pipelinechannel--evaluate-model-run_id": {
+                  "componentInputParameter": "pipelinechannel--evaluate-model-run_id"
+                },
+                "pipelinechannel--project_id": {
+                  "componentInputParameter": "pipelinechannel--project_id"
+                },
+                "pipelinechannel--quality-gate-is_passed": {
+                  "componentInputParameter": "pipelinechannel--quality-gate-is_passed"
+                },
+                "pipelinechannel--region": {
+                  "componentInputParameter": "pipelinechannel--region"
+                }
+              }
+            },
+            "taskInfo": {
+              "name": "condition-2"
+            },
+            "triggerPolicy": {
+              "condition": "inputs.parameter_values['pipelinechannel--compare-champion-should_deploy'] == 'true'"
+            }
+          }
+        }
+      },
+      "inputDefinitions": {
+        "parameters": {
+          "pipelinechannel--discord_webhook_url": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--endpoint_display_name": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--evaluate-model-mae": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "pipelinechannel--evaluate-model-model_gcs_path": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--evaluate-model-rmse": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "pipelinechannel--evaluate-model-run_id": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--improvement_threshold": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "pipelinechannel--project_id": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--quality-gate-is_passed": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--region": {
+            "parameterType": "STRING"
+          }
+        }
+      }
+    },
+    "comp-condition-2": {
+      "dag": {
+        "tasks": {
+          "deploy-model": {
+            "cachingOptions": {
+              "enableCache": true
+            },
+            "componentRef": {
+              "name": "comp-deploy-model"
+            },
+            "inputs": {
+              "parameters": {
+                "discord_webhook_url": {
+                  "componentInputParameter": "pipelinechannel--discord_webhook_url"
+                },
+                "endpoint_display_name": {
+                  "componentInputParameter": "pipelinechannel--endpoint_display_name"
+                },
+                "mae": {
+                  "componentInputParameter": "pipelinechannel--evaluate-model-mae"
+                },
+                "model_gcs_path": {
+                  "componentInputParameter": "pipelinechannel--evaluate-model-model_gcs_path"
+                },
+                "project_id": {
+                  "componentInputParameter": "pipelinechannel--project_id"
+                },
+                "region": {
+                  "componentInputParameter": "pipelinechannel--region"
+                },
+                "rmse": {
+                  "componentInputParameter": "pipelinechannel--evaluate-model-rmse"
+                },
+                "run_id": {
+                  "componentInputParameter": "pipelinechannel--evaluate-model-run_id"
+                }
+              }
+            },
+            "taskInfo": {
+              "name": "deploy-model"
+            }
+          }
+        }
+      },
+      "inputDefinitions": {
+        "parameters": {
+          "pipelinechannel--compare-champion-should_deploy": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--discord_webhook_url": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--endpoint_display_name": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--evaluate-model-mae": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "pipelinechannel--evaluate-model-model_gcs_path": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--evaluate-model-rmse": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "pipelinechannel--evaluate-model-run_id": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--project_id": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--quality-gate-is_passed": {
+            "parameterType": "STRING"
+          },
+          "pipelinechannel--region": {
+            "parameterType": "STRING"
+          }
+        }
+      }
+    },
+    "comp-deploy-model": {
+      "executorLabel": "exec-deploy-model",
+      "inputDefinitions": {
+        "parameters": {
+          "discord_webhook_url": {
+            "parameterType": "STRING"
+          },
+          "endpoint_display_name": {
+            "parameterType": "STRING"
+          },
+          "mae": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "model_gcs_path": {
+            "parameterType": "STRING"
+          },
+          "project_id": {
+            "parameterType": "STRING"
+          },
+          "region": {
+            "parameterType": "STRING"
+          },
+          "rmse": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "run_id": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "parameters": {
+          "endpoint_resource_name": {
+            "parameterType": "STRING"
+          }
+        }
+      }
+    },
+    "comp-evaluate-model": {
+      "executorLabel": "exec-evaluate-model",
+      "inputDefinitions": {
+        "artifacts": {
+          "X_test_in": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          },
+          "model_in": {
+            "artifactType": {
+              "schemaTitle": "system.Model",
+              "schemaVersion": "0.0.1"
+            }
+          },
+          "y_test_in": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        },
+        "parameters": {
+          "bucket_name": {
+            "parameterType": "STRING"
+          },
+          "max_depth": {
+            "parameterType": "NUMBER_INTEGER"
+          },
+          "n_estimators": {
+            "parameterType": "NUMBER_INTEGER"
+          },
+          "project_id": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "metrics_out": {
+            "artifactType": {
+              "schemaTitle": "system.Metrics",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        },
+        "parameters": {
+          "mae": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "model_gcs_path": {
+            "parameterType": "STRING"
+          },
+          "rmse": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "run_id": {
+            "parameterType": "STRING"
+          }
+        }
+      }
+    },
+    "comp-load-data": {
+      "executorLabel": "exec-load-data",
+      "inputDefinitions": {
+        "parameters": {
+          "random_state": {
+            "parameterType": "NUMBER_INTEGER"
+          },
+          "test_size": {
+            "parameterType": "NUMBER_DOUBLE"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "X_test_out": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          },
+          "X_train_out": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          },
+          "y_test_out": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          },
+          "y_train_out": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        }
+      }
+    },
+    "comp-quality-gate": {
+      "executorLabel": "exec-quality-gate",
+      "inputDefinitions": {
+        "parameters": {
+          "discord_webhook_url": {
+            "parameterType": "STRING"
+          },
+          "model_gcs_path": {
+            "parameterType": "STRING"
+          },
+          "rmse": {
+            "parameterType": "NUMBER_DOUBLE"
+          },
+          "rmse_threshold": {
+            "parameterType": "NUMBER_DOUBLE"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "parameters": {
+          "is_passed": {
+            "parameterType": "STRING"
+          }
+        }
+      }
+    },
+    "comp-train-model": {
+      "executorLabel": "exec-train-model",
+      "inputDefinitions": {
+        "artifacts": {
+          "X_train_in": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          },
+          "y_train_in": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        },
+        "parameters": {
+          "max_depth": {
+            "parameterType": "NUMBER_INTEGER"
+          },
+          "n_estimators": {
+            "parameterType": "NUMBER_INTEGER"
+          },
+          "random_state": {
+            "parameterType": "NUMBER_INTEGER"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "model_out": {
+            "artifactType": {
+              "schemaTitle": "system.Model",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        }
+      }
+    }
+  },
+  "defaultPipelineRoot": "gs://mlops-dev-a-data/pipeline-artifacts",
+  "deploymentSpec": {
+    "executors": {
+      "exec-compare-champion": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "compare_champion"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&  python3 -m pip install --quiet --no-warn-script-location 'google-cloud-bigquery==3.14.1' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef compare_champion(\n    challenger_rmse: float,\n    challenger_model_path: str,\n    improvement_threshold: float,\n    project_id: str,\n    discord_webhook_url: str,\n) -> NamedTuple(\"Outputs\", [(\"should_deploy\", str), (\"champion_rmse\", float)]):\n    \"\"\"BigQuery \u304b\u3089 Champion \u30e2\u30c7\u30eb\u306e RMSE \u3092\u53d6\u5f97\u3057\u3001Challenger \u3068\u6bd4\u8f03\u3059\u308b\u3002\"\"\"\n    import json\n    import urllib.request\n    from collections import namedtuple\n\n    from google.cloud import bigquery\n\n    def notify_discord(message: str, fields: list, color: int = 16776960):\n        if not discord_webhook_url:\n            return\n        payload = {\n            \"embeds\": [{\n                \"title\": message,\n                \"color\": color,\n                \"fields\": fields,\n            }]\n        }\n        data = json.dumps(payload).encode()\n        req = urllib.request.Request(\n            discord_webhook_url,\n            data=data,\n            headers={\"Content-Type\": \"application/json\"},\n        )\n        urllib.request.urlopen(req)\n\n    # BigQuery \u304b\u3089\u73fe Champion \u306e\u30e1\u30c8\u30ea\u30af\u30b9\u3092\u53d6\u5f97\n    # NOTE: challenger \u81ea\u8eab\u306e\u30e1\u30c8\u30ea\u30af\u30b9\u306f\u76f4\u524d\u306e evaluate_model \u3067\u633f\u5165\u6e08\u307f\u306a\u306e\u3067\u9664\u5916\u3059\u308b\n    bq_client = bigquery.Client(project=project_id)\n    query = f\"\"\"\n    SELECT model_path, rmse\n    FROM `{project_id}.mlops.metrics`\n    WHERE model_path != @challenger_path\n    ORDER BY rmse ASC\n    LIMIT 1\n    \"\"\"\n    job_config = bigquery.QueryJobConfig(\n        query_parameters=[\n            bigquery.ScalarQueryParameter(\"challenger_path\", \"STRING\", challenger_model_path),\n        ]\n    )\n    rows = list(bq_client.query(query, job_config=job_config).result())\n\n    Outputs = namedtuple(\"Outputs\", [\"should_deploy\", \"champion_rmse\"])\n\n    # \u521d\u56de\u5b9f\u884c\uff08Champion \u306a\u3057\uff09\n    if not rows:\n        print(\"Champion \u306a\u3057\uff08\u521d\u56de\u5b9f\u884c\uff09: \u30c7\u30d7\u30ed\u30a4\u5b9f\u884c\")\n        return Outputs(should_deploy=\"true\", champion_rmse=999.0)\n\n    champion_rmse = float(rows[0].rmse)\n    champion_path = rows[0].model_path\n    threshold = champion_rmse * (1.0 - improvement_threshold)\n\n    print(f\"Champion RMSE: {champion_rmse:.4f} (path: {champion_path})\")\n    print(f\"Challenger RMSE: {challenger_rmse:.4f}\")\n    print(f\"\u6539\u5584\u95be\u5024: {threshold:.4f} (Champion * {1.0 - improvement_threshold})\")\n\n    if challenger_rmse < threshold:\n        improvement_pct = (champion_rmse - challenger_rmse) / champion_rmse * 100\n        print(f\"Challenger \u304c\u512a\u4f4d: {improvement_pct:.2f}% \u6539\u5584 \u2192 \u30c7\u30d7\u30ed\u30a4\u5b9f\u884c\")\n        return Outputs(should_deploy=\"true\", champion_rmse=champion_rmse)\n    else:\n        print(\"\u6709\u610f\u306a\u6539\u5584\u306a\u3057 \u2192 \u30c7\u30d7\u30ed\u30a4\u30b9\u30ad\u30c3\u30d7\")\n        notify_discord(\n            \"Champion/Challenger \u6bd4\u8f03: \u6539\u5584\u306a\u3057\",\n            [\n                {\"name\": \"Champion RMSE\", \"value\": f\"{champion_rmse:.4f}\", \"inline\": True},\n                {\"name\": \"Challenger RMSE\", \"value\": f\"{challenger_rmse:.4f}\", \"inline\": True},\n                {\"name\": \"\u6539\u5584\u95be\u5024\", \"value\": f\"{improvement_threshold*100:.1f}%\", \"inline\": True},\n            ],\n        )\n        return Outputs(should_deploy=\"false\", champion_rmse=champion_rmse)\n\n"
+          ],
+          "image": "python:3.11-slim"
+        }
+      },
+      "exec-deploy-model": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "deploy_model"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&  python3 -m pip install --quiet --no-warn-script-location 'google-cloud-aiplatform==1.38.1' 'google-cloud-storage==2.14.0' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef deploy_model(\n    model_gcs_path: str,\n    project_id: str,\n    region: str,\n    endpoint_display_name: str,\n    run_id: str,\n    rmse: float,\n    mae: float,\n    discord_webhook_url: str,\n) -> NamedTuple(\"Outputs\", [(\"endpoint_resource_name\", str)]):\n    \"\"\"Vertex AI Endpoint \u306b\u30e2\u30c7\u30eb\u3092\u30c7\u30d7\u30ed\u30a4\u3059\u308b\u3002\"\"\"\n    import json\n    import re\n    import urllib.request\n    from collections import namedtuple\n\n    from google.cloud import aiplatform, storage\n\n    def notify_discord(message: str, fields: list, color: int = 3066993):\n        if not discord_webhook_url:\n            return\n        payload = {\n            \"embeds\": [{\n                \"title\": message,\n                \"color\": color,\n                \"fields\": fields,\n            }]\n        }\n        data = json.dumps(payload).encode()\n        req = urllib.request.Request(\n            discord_webhook_url,\n            data=data,\n            headers={\"Content-Type\": \"application/json\"},\n        )\n        urllib.request.urlopen(req)\n\n    aiplatform.init(project=project_id, location=region)\n\n    # GCS \u304b\u3089\u30e2\u30c7\u30eb\u3092 serving \u7528\u30c7\u30a3\u30ec\u30af\u30c8\u30ea\u306b\u30b3\u30d4\u30fc\n    # sklearn serving container \u306f artifact_uri \u76f4\u4e0b\u306e model.pkl \u3092\u671f\u5f85\u3059\u308b\n    m = re.match(r\"gs://([^/]+)/(.+)\", model_gcs_path)\n    src_bucket_name, src_blob_path = m.group(1), m.group(2)\n\n    serving_dir = f\"serving/{run_id}\"\n    serving_blob_path = f\"{serving_dir}/model.pkl\"\n    serving_uri = f\"gs://{src_bucket_name}/{serving_dir}\"\n\n    gcs_client = storage.Client(project=project_id)\n    bucket = gcs_client.bucket(src_bucket_name)\n    src_blob = bucket.blob(src_blob_path)\n    bucket.copy_blob(src_blob, bucket, serving_blob_path)\n    print(f\"\u30e2\u30c7\u30eb\u30b3\u30d4\u30fc\u5b8c\u4e86: {model_gcs_path} \u2192 gs://{src_bucket_name}/{serving_blob_path}\")\n\n    # Vertex AI Model Registry \u306b\u767b\u9332\n    model = aiplatform.Model.upload(\n        display_name=f\"california-housing-rf-{run_id[:8]}\",\n        artifact_uri=serving_uri,\n        serving_container_image_uri=\"us-docker.pkg.dev/vertex-ai/prediction/sklearn-cpu.1-3:latest\",\n    )\n    print(f\"Model Registry \u767b\u9332\u5b8c\u4e86: {model.resource_name}\")\n\n    # \u65e2\u5b58 Endpoint \u3092\u691c\u7d22\u3001\u306a\u3051\u308c\u3070\u65b0\u898f\u4f5c\u6210\n    endpoints = aiplatform.Endpoint.list(\n        filter=f'display_name=\"{endpoint_display_name}\"',\n    )\n    if endpoints:\n        endpoint = endpoints[0]\n        print(f\"\u65e2\u5b58 Endpoint \u4f7f\u7528: {endpoint.resource_name}\")\n    else:\n        endpoint = aiplatform.Endpoint.create(\n            display_name=endpoint_display_name,\n        )\n        print(f\"Endpoint \u65b0\u898f\u4f5c\u6210: {endpoint.resource_name}\")\n\n    # \u30c7\u30d7\u30ed\u30a4\uff08traffic 100%\uff09\n    model.deploy(\n        endpoint=endpoint,\n        machine_type=\"n1-standard-2\",\n        min_replica_count=1,\n        max_replica_count=1,\n        traffic_percentage=100,\n    )\n    print(f\"\u30c7\u30d7\u30ed\u30a4\u5b8c\u4e86: {endpoint.resource_name}\")\n\n    # Discord \u901a\u77e5\n    notify_discord(\n        \"\u30e2\u30c7\u30eb\u30c7\u30d7\u30ed\u30a4\u6210\u529f\",\n        [\n            {\"name\": \"RMSE\", \"value\": f\"{rmse:.4f}\", \"inline\": True},\n            {\"name\": \"MAE\", \"value\": f\"{mae:.4f}\", \"inline\": True},\n            {\"name\": \"Endpoint\", \"value\": endpoint.resource_name, \"inline\": False},\n            {\"name\": \"\u30e2\u30c7\u30eb\", \"value\": model_gcs_path, \"inline\": False},\n        ],\n    )\n\n    Outputs = namedtuple(\"Outputs\", [\"endpoint_resource_name\"])\n    return Outputs(endpoint_resource_name=endpoint.resource_name)\n\n"
+          ],
+          "image": "python:3.11-slim"
+        }
+      },
+      "exec-evaluate-model": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "evaluate_model"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&  python3 -m pip install --quiet --no-warn-script-location 'scikit-learn==1.3.2' 'pandas==2.1.4' 'pyarrow==14.0.2' 'google-cloud-storage==2.14.0' 'google-cloud-bigquery==3.14.1' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef evaluate_model(\n    model_in: dsl.Input[dsl.Model],\n    X_test_in: dsl.Input[dsl.Dataset],\n    y_test_in: dsl.Input[dsl.Dataset],\n    project_id: str,\n    bucket_name: str,\n    n_estimators: int,\n    max_depth: int,\n    metrics_out: dsl.Output[dsl.Metrics],\n) -> NamedTuple(\"Outputs\", [(\"rmse\", float), (\"mae\", float), (\"model_gcs_path\", str), (\"run_id\", str)]):\n    \"\"\"\u30e2\u30c7\u30eb\u3092\u8a55\u4fa1\u3057\u3001GCS \u306b\u4fdd\u5b58\u3001BigQuery \u306b\u30e1\u30c8\u30ea\u30af\u30b9\u3092\u8a18\u9332\u3059\u308b\u3002\"\"\"\n    import io\n    import pickle\n    import uuid\n    from collections import namedtuple\n    from datetime import datetime, timezone\n\n    import numpy as np\n    import pandas as pd\n    from google.cloud import bigquery, storage\n    from sklearn.metrics import mean_absolute_error, mean_squared_error\n\n    # \u30e2\u30c7\u30eb\u3068\u30c6\u30b9\u30c8\u30c7\u30fc\u30bf\u306e\u8aad\u307f\u8fbc\u307f\n    with open(model_in.path, \"rb\") as f:\n        model = pickle.load(f)\n\n    X_test = pd.read_parquet(X_test_in.path)\n    y_test = pd.read_parquet(y_test_in.path)[\"target\"]\n\n    # \u8a55\u4fa1\n    y_pred = model.predict(X_test)\n    rmse = float(np.sqrt(mean_squared_error(y_test, y_pred)))\n    mae = float(mean_absolute_error(y_test, y_pred))\n    print(f\"\u8a55\u4fa1\u5b8c\u4e86: RMSE={rmse:.4f}, MAE={mae:.4f}\")\n\n    # Vertex AI Metrics \u306b\u8a18\u9332\n    metrics_out.log_metric(\"rmse\", rmse)\n    metrics_out.log_metric(\"mae\", mae)\n    metrics_out.log_metric(\"n_estimators\", n_estimators)\n    metrics_out.log_metric(\"max_depth\", max_depth)\n\n    # GCS \u306b\u30e2\u30c7\u30eb\u4fdd\u5b58\uff08\u65e2\u5b58\u306e batch/model_store.py \u3068\u540c\u3058\u30d1\u30b9\u898f\u7d04\uff09\n    now = datetime.now(timezone.utc)\n    blob_path = f\"models/{now.strftime('%Y%m%d')}/model_{now.strftime('%Y%m%d_%H%M%S')}.pkl\"\n\n    buf = io.BytesIO()\n    pickle.dump(model, buf)\n    buf.seek(0)\n\n    gcs_client = storage.Client(project=project_id)\n    bucket = gcs_client.bucket(bucket_name)\n    blob = bucket.blob(blob_path)\n    blob.upload_from_file(buf, content_type=\"application/octet-stream\")\n\n    model_gcs_path = f\"gs://{bucket_name}/{blob_path}\"\n    print(f\"\u30e2\u30c7\u30eb\u4fdd\u5b58\u5b8c\u4e86: {model_gcs_path}\")\n\n    # BigQuery \u306b\u30e1\u30c8\u30ea\u30af\u30b9\u8a18\u9332\n    run_id = str(uuid.uuid4())\n    bq_client = bigquery.Client(project=project_id)\n    table_id = f\"{project_id}.mlops.metrics\"\n    row = {\n        \"run_id\": run_id,\n        \"timestamp\": now.isoformat(),\n        \"rmse\": rmse,\n        \"mae\": mae,\n        \"model_path\": model_gcs_path,\n        \"n_estimators\": n_estimators,\n        \"max_depth\": max_depth,\n    }\n    errors = bq_client.insert_rows_json(table_id, [row])\n    if errors:\n        print(f\"BigQuery insert \u30a8\u30e9\u30fc: {errors}\")\n    else:\n        print(f\"BigQuery \u30e1\u30c8\u30ea\u30af\u30b9\u8a18\u9332\u5b8c\u4e86: run_id={run_id}\")\n\n    Outputs = namedtuple(\"Outputs\", [\"rmse\", \"mae\", \"model_gcs_path\", \"run_id\"])\n    return Outputs(rmse=rmse, mae=mae, model_gcs_path=model_gcs_path, run_id=run_id)\n\n"
+          ],
+          "image": "python:3.11-slim"
+        }
+      },
+      "exec-load-data": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "load_data"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&  python3 -m pip install --quiet --no-warn-script-location 'scikit-learn==1.3.2' 'pandas==2.1.4' 'pyarrow==14.0.2' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef load_data(\n    test_size: float,\n    random_state: int,\n    X_train_out: dsl.Output[dsl.Dataset],\n    X_test_out: dsl.Output[dsl.Dataset],\n    y_train_out: dsl.Output[dsl.Dataset],\n    y_test_out: dsl.Output[dsl.Dataset],\n):\n    \"\"\"California Housing \u30c7\u30fc\u30bf\u30bb\u30c3\u30c8\u3092\u53d6\u5f97\u3057 train/test \u306b\u5206\u5272\u3059\u308b\u3002\"\"\"\n    import pandas as pd\n    from sklearn.datasets import fetch_california_housing\n    from sklearn.model_selection import train_test_split\n\n    housing = fetch_california_housing(as_frame=True)\n    X = housing.data\n    y = housing.target\n\n    X_train, X_test, y_train, y_test = train_test_split(\n        X, y, test_size=test_size, random_state=random_state\n    )\n\n    X_train.to_parquet(X_train_out.path)\n    X_test.to_parquet(X_test_out.path)\n    y_train.to_frame(name=\"target\").to_parquet(y_train_out.path)\n    y_test.to_frame(name=\"target\").to_parquet(y_test_out.path)\n\n    print(f\"\u30c7\u30fc\u30bf\u53d6\u5f97\u5b8c\u4e86: train={len(X_train)}\u4ef6, test={len(X_test)}\u4ef6\")\n\n"
+          ],
+          "image": "python:3.11-slim"
+        }
+      },
+      "exec-quality-gate": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "quality_gate"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef quality_gate(\n    rmse: float,\n    rmse_threshold: float,\n    model_gcs_path: str,\n    discord_webhook_url: str,\n) -> NamedTuple(\"Outputs\", [(\"is_passed\", str)]):\n    \"\"\"RMSE \u304c\u95be\u5024\u4ee5\u4e0b\u304b\u3092\u5224\u5b9a\u3059\u308b\u54c1\u8cea\u30b2\u30fc\u30c8\u3002\"\"\"\n    import json\n    import urllib.request\n    from collections import namedtuple\n\n    def notify_discord(message: str, fields: list, color: int = 15158332):\n        if not discord_webhook_url:\n            return\n        payload = {\n            \"embeds\": [{\n                \"title\": message,\n                \"color\": color,\n                \"fields\": fields,\n            }]\n        }\n        data = json.dumps(payload).encode()\n        req = urllib.request.Request(\n            discord_webhook_url,\n            data=data,\n            headers={\"Content-Type\": \"application/json\"},\n        )\n        urllib.request.urlopen(req)\n\n    is_passed = rmse <= rmse_threshold\n\n    if is_passed:\n        print(f\"\u54c1\u8cea\u30b2\u30fc\u30c8\u5408\u683c: RMSE={rmse:.4f} <= \u95be\u5024{rmse_threshold:.4f}\")\n    else:\n        print(f\"\u54c1\u8cea\u30b2\u30fc\u30c8\u4e0d\u5408\u683c: RMSE={rmse:.4f} > \u95be\u5024{rmse_threshold:.4f}\")\n        notify_discord(\n            \"\u54c1\u8cea\u30b2\u30fc\u30c8\u4e0d\u5408\u683c\",\n            [\n                {\"name\": \"RMSE\", \"value\": f\"{rmse:.4f}\", \"inline\": True},\n                {\"name\": \"\u95be\u5024\", \"value\": f\"{rmse_threshold:.4f}\", \"inline\": True},\n                {\"name\": \"\u30e2\u30c7\u30eb\", \"value\": model_gcs_path, \"inline\": False},\n            ],\n            color=16776960,  # \u9ec4\n        )\n\n    Outputs = namedtuple(\"Outputs\", [\"is_passed\"])\n    return Outputs(is_passed=\"true\" if is_passed else \"false\")\n\n"
+          ],
+          "image": "python:3.11-slim"
+        }
+      },
+      "exec-train-model": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "train_model"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&  python3 -m pip install --quiet --no-warn-script-location 'scikit-learn==1.3.2' 'pandas==2.1.4' 'pyarrow==14.0.2' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef train_model(\n    X_train_in: dsl.Input[dsl.Dataset],\n    y_train_in: dsl.Input[dsl.Dataset],\n    n_estimators: int,\n    max_depth: int,\n    random_state: int,\n    model_out: dsl.Output[dsl.Model],\n):\n    \"\"\"RandomForestRegressor \u3092\u69cb\u7bc9\u30fb\u5b66\u7fd2\u3059\u308b\u3002\"\"\"\n    import pickle\n\n    import pandas as pd\n    from sklearn.ensemble import RandomForestRegressor\n\n    X_train = pd.read_parquet(X_train_in.path)\n    y_train = pd.read_parquet(y_train_in.path)[\"target\"]\n\n    model = RandomForestRegressor(\n        n_estimators=n_estimators,\n        max_depth=max_depth,\n        random_state=random_state,\n    )\n    model.fit(X_train, y_train)\n\n    with open(model_out.path, \"wb\") as f:\n        pickle.dump(model, f)\n\n    print(f\"\u5b66\u7fd2\u5b8c\u4e86: n_estimators={n_estimators}, max_depth={max_depth}\")\n\n"
+          ],
+          "image": "python:3.11-slim"
+        }
+      }
+    }
+  },
+  "pipelineInfo": {
+    "description": "California Housing \u30e2\u30c7\u30eb\u306e\u5b66\u7fd2\u30fb\u8a55\u4fa1\u30fb\u54c1\u8cea\u30b2\u30fc\u30c8\u30fbChampion\u6bd4\u8f03\u30fb\u30c7\u30d7\u30ed\u30a4",
+    "name": "california-housing-pipeline"
+  },
+  "root": {
+    "dag": {
+      "outputs": {
+        "artifacts": {
+          "evaluate-model-metrics_out": {
+            "artifactSelectors": [
+              {
+                "outputArtifactKey": "metrics_out",
+                "producerSubtask": "evaluate-model"
+              }
+            ]
+          }
+        }
+      },
+      "tasks": {
+        "condition-1": {
+          "componentRef": {
+            "name": "comp-condition-1"
+          },
+          "dependentTasks": [
+            "evaluate-model",
+            "quality-gate"
+          ],
+          "inputs": {
+            "parameters": {
+              "pipelinechannel--discord_webhook_url": {
+                "componentInputParameter": "discord_webhook_url"
+              },
+              "pipelinechannel--endpoint_display_name": {
+                "componentInputParameter": "endpoint_display_name"
+              },
+              "pipelinechannel--evaluate-model-mae": {
+                "taskOutputParameter": {
+                  "outputParameterKey": "mae",
+                  "producerTask": "evaluate-model"
+                }
+              },
+              "pipelinechannel--evaluate-model-model_gcs_path": {
+                "taskOutputParameter": {
+                  "outputParameterKey": "model_gcs_path",
+                  "producerTask": "evaluate-model"
+                }
+              },
+              "pipelinechannel--evaluate-model-rmse": {
+                "taskOutputParameter": {
+                  "outputParameterKey": "rmse",
+                  "producerTask": "evaluate-model"
+                }
+              },
+              "pipelinechannel--evaluate-model-run_id": {
+                "taskOutputParameter": {
+                  "outputParameterKey": "run_id",
+                  "producerTask": "evaluate-model"
+                }
+              },
+              "pipelinechannel--improvement_threshold": {
+                "componentInputParameter": "improvement_threshold"
+              },
+              "pipelinechannel--project_id": {
+                "componentInputParameter": "project_id"
+              },
+              "pipelinechannel--quality-gate-is_passed": {
+                "taskOutputParameter": {
+                  "outputParameterKey": "is_passed",
+                  "producerTask": "quality-gate"
+                }
+              },
+              "pipelinechannel--region": {
+                "componentInputParameter": "region"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "condition-1"
+          },
+          "triggerPolicy": {
+            "condition": "inputs.parameter_values['pipelinechannel--quality-gate-is_passed'] == 'true'"
+          }
+        },
+        "evaluate-model": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-evaluate-model"
+          },
+          "dependentTasks": [
+            "load-data",
+            "train-model"
+          ],
+          "inputs": {
+            "artifacts": {
+              "X_test_in": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "X_test_out",
+                  "producerTask": "load-data"
+                }
+              },
+              "model_in": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "model_out",
+                  "producerTask": "train-model"
+                }
+              },
+              "y_test_in": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "y_test_out",
+                  "producerTask": "load-data"
+                }
+              }
+            },
+            "parameters": {
+              "bucket_name": {
+                "componentInputParameter": "bucket_name"
+              },
+              "max_depth": {
+                "componentInputParameter": "max_depth"
+              },
+              "n_estimators": {
+                "componentInputParameter": "n_estimators"
+              },
+              "project_id": {
+                "componentInputParameter": "project_id"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "evaluate-model"
+          }
+        },
+        "load-data": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-load-data"
+          },
+          "inputs": {
+            "parameters": {
+              "random_state": {
+                "componentInputParameter": "random_state"
+              },
+              "test_size": {
+                "componentInputParameter": "test_size"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "load-data"
+          }
+        },
+        "quality-gate": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-quality-gate"
+          },
+          "dependentTasks": [
+            "evaluate-model"
+          ],
+          "inputs": {
+            "parameters": {
+              "discord_webhook_url": {
+                "componentInputParameter": "discord_webhook_url"
+              },
+              "model_gcs_path": {
+                "taskOutputParameter": {
+                  "outputParameterKey": "model_gcs_path",
+                  "producerTask": "evaluate-model"
+                }
+              },
+              "rmse": {
+                "taskOutputParameter": {
+                  "outputParameterKey": "rmse",
+                  "producerTask": "evaluate-model"
+                }
+              },
+              "rmse_threshold": {
+                "componentInputParameter": "rmse_threshold"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "quality-gate"
+          }
+        },
+        "train-model": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-train-model"
+          },
+          "dependentTasks": [
+            "load-data"
+          ],
+          "inputs": {
+            "artifacts": {
+              "X_train_in": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "X_train_out",
+                  "producerTask": "load-data"
+                }
+              },
+              "y_train_in": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "y_train_out",
+                  "producerTask": "load-data"
+                }
+              }
+            },
+            "parameters": {
+              "max_depth": {
+                "componentInputParameter": "max_depth"
+              },
+              "n_estimators": {
+                "componentInputParameter": "n_estimators"
+              },
+              "random_state": {
+                "componentInputParameter": "random_state"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "train-model"
+          }
+        }
+      }
+    },
+    "inputDefinitions": {
+      "parameters": {
+        "bucket_name": {
+          "defaultValue": "mlops-dev-a-data",
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "discord_webhook_url": {
+          "defaultValue": "",
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "endpoint_display_name": {
+          "defaultValue": "california-housing-endpoint",
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "improvement_threshold": {
+          "defaultValue": 0.01,
+          "isOptional": true,
+          "parameterType": "NUMBER_DOUBLE"
+        },
+        "max_depth": {
+          "defaultValue": 10.0,
+          "isOptional": true,
+          "parameterType": "NUMBER_INTEGER"
+        },
+        "n_estimators": {
+          "defaultValue": 100.0,
+          "isOptional": true,
+          "parameterType": "NUMBER_INTEGER"
+        },
+        "project_id": {
+          "defaultValue": "mlops-dev-a",
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "random_state": {
+          "defaultValue": 42.0,
+          "isOptional": true,
+          "parameterType": "NUMBER_INTEGER"
+        },
+        "region": {
+          "defaultValue": "asia-northeast1",
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "rmse_threshold": {
+          "defaultValue": 0.8,
+          "isOptional": true,
+          "parameterType": "NUMBER_DOUBLE"
+        },
+        "test_size": {
+          "defaultValue": 0.2,
+          "isOptional": true,
+          "parameterType": "NUMBER_DOUBLE"
+        }
+      }
+    },
+    "outputDefinitions": {
+      "artifacts": {
+        "evaluate-model-metrics_out": {
+          "artifactType": {
+            "schemaTitle": "system.Metrics",
+            "schemaVersion": "0.0.1"
+          }
+        }
+      }
+    }
+  },
+  "schemaVersion": "2.1.0",
+  "sdkVersion": "kfp-2.7.0"
+}

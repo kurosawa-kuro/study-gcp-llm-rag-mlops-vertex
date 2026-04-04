@@ -1,0 +1,10 @@
+terraform/
+scripts/
+.env
+.git/
+.gitignore
+.dockerignore
+Makefile
+README*.md
+__pycache__/
+*.pyc

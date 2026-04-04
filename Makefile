@@ -174,7 +174,7 @@ eval-search-patterns:  ## 検索パターン比較（vector / elasticsearch / hy
 # =====================================================================
 # 評価パイプライン（Vertex AI Pipeline）
 # =====================================================================
-.PHONY: eval-pipeline-build eval-pipeline-push eval-pipeline-compile eval-pipeline-run
+.PHONY: eval-pipeline-build eval-pipeline-push eval-pipeline-compile eval-pipeline-run eval-pipeline-schedule
 
 EVAL_PIPELINE_DIR := src/doc-qa/pipeline
 EVAL_IMAGE := $(IMAGE_BASE)/doc-qa-eval:$(TAG)
@@ -190,6 +190,9 @@ eval-pipeline-compile:  ## パイプラインをJSONにコンパイル
 
 eval-pipeline-run: eval-pipeline-push  ## パイプラインをコンパイルして実行
 	cd $(EVAL_PIPELINE_DIR) && pip install -q -r requirements.txt && python run_pipeline.py run
+
+eval-pipeline-schedule: eval-pipeline-push  ## Vertex AI Pipeline 週次スケジュール作成/更新（冪等）
+	cd $(EVAL_PIPELINE_DIR) && pip install -q -r requirements.txt && python run_pipeline.py schedule
 
 # =====================================================================
 # 統合コマンド
@@ -222,19 +225,24 @@ help:
 	@echo "  make tf-fmt             フォーマット"
 	@echo ""
 	@echo "=== Ingestion ==="
-	@echo "  make ingestion-test     テスト実行"
 	@echo "  make ingestion-build    Dockerイメージビルド"
 	@echo "  make ingestion-deploy   冪等デプロイ"
 	@echo "  make ingestion-run      Cloud Run Job実行"
 	@echo "  make ingestion-logs     実行履歴確認"
 	@echo ""
 	@echo "=== QA API ==="
-	@echo "  make qa-api-test        テスト実行"
 	@echo "  make qa-api-build       Dockerイメージビルド"
 	@echo "  make qa-api-deploy      冪等デプロイ"
 	@echo "  make qa-api-logs        ログ確認"
 	@echo "  make qa-api-url         URL表示"
 	@echo "  make qa-api-monitor     健全性チェック"
+	@echo ""
+	@echo "=== テスト ==="
+	@echo "  make test               全テスト実行"
+	@echo "  make ingestion-test     Ingestion テスト"
+	@echo "  make qa-api-test        QA API テスト"
+	@echo "  make shared-test        shared/config テスト"
+	@echo "  make eval-test          評価指標・レポート テスト"
 	@echo ""
 	@echo "=== 評価 ==="
 	@echo "  make eval               評価実行（hybrid検索）"
@@ -246,3 +254,4 @@ help:
 	@echo "  make eval-pipeline-push     イメージpush"
 	@echo "  make eval-pipeline-compile  パイプラインJSONコンパイル"
 	@echo "  make eval-pipeline-run      パイプライン実行"
+	@echo "  make eval-pipeline-schedule Vertex AI Pipeline スケジュール作成/更新"

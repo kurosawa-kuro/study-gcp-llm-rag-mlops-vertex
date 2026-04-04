@@ -10,13 +10,20 @@
   # パラメータを指定して実行
   python run_pipeline.py run --search-type vector
 
-  # 週次スケジュール作成
+  # GCS 上の既存テンプレートで実行
+  python run_pipeline.py run --template-path gs://bucket/eval_pipeline.json
+
+  # 週次スケジュール作成（冪等）
   python run_pipeline.py schedule
+
+  # GCS 上のテンプレートでスケジュール作成
+  python run_pipeline.py schedule --template-path gs://bucket/eval_pipeline.json
 """
 
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 
 from google.cloud import aiplatform
@@ -24,10 +31,13 @@ from kfp import compiler
 
 from pipeline import rag_evaluation_pipeline
 
-PROJECT_ID = "mlops-dev-a"
-REGION = "asia-northeast1"
-PIPELINE_ROOT = "gs://mlops-dev-a-doc-qa/pipeline-artifacts"
+logger = logging.getLogger(__name__)
+
+PROJECT_ID = os.environ.get("GCP_PROJECT", "mlops-dev-a")
+REGION = os.environ.get("GCP_REGION", "asia-northeast1")
+PIPELINE_ROOT = f"gs://{os.environ.get('GCS_BUCKET', 'mlops-dev-a-doc-qa')}/pipeline-artifacts"
 SERVICE_ACCOUNT = f"doc-qa-runner@{PROJECT_ID}.iam.gserviceaccount.com"
+SCHEDULE_DISPLAY_NAME = "doc-qa-rag-eval-weekly"
 
 
 def compile_pipeline(output_path: str = "eval_pipeline.json") -> str:
@@ -46,7 +56,7 @@ def run_pipeline(
     top_k: int = 10,
     sync: bool = True,
 ) -> aiplatform.PipelineJob:
-    """パイプラインをコンパイルして Vertex AI で実行する。"""
+    """パイプラインを Vertex AI で実行する。"""
     aiplatform.init(project=PROJECT_ID, location=REGION)
 
     parameter_values = {
@@ -68,12 +78,29 @@ def run_pipeline(
     return job
 
 
+def _delete_existing_schedules() -> int:
+    """同名の既存スケジュールを削除する（冪等性確保）。"""
+    deleted = 0
+    for schedule in aiplatform.PipelineJobSchedule.list(
+        filter=f'display_name="{SCHEDULE_DISPLAY_NAME}"',
+    ):
+        print(f"既存スケジュール削除: {schedule.resource_name}")
+        schedule.delete()
+        deleted += 1
+    return deleted
+
+
 def create_schedule(
     template_path: str = "eval_pipeline.json",
     cron: str = "0 22 * * 0",
 ) -> None:
-    """パイプラインの週次スケジュールを作成する。"""
+    """パイプラインの週次スケジュールを作成する（冪等）。
+
+    同名の既存スケジュールがあれば削除してから再作成する。
+    """
     aiplatform.init(project=PROJECT_ID, location=REGION)
+
+    _delete_existing_schedules()
 
     parameter_values = {
         "project_id": PROJECT_ID,
@@ -90,11 +117,13 @@ def create_schedule(
         parameter_values=parameter_values,
     )
     schedule = job.create_schedule(
-        display_name="doc-qa-rag-eval-weekly",
+        display_name=SCHEDULE_DISPLAY_NAME,
         cron=cron,
         service_account=SERVICE_ACCOUNT,
     )
     print(f"スケジュール作成完了: {schedule.resource_name}")
+    print(f"  cron: {cron}")
+    print(f"  テンプレート: {template_path}")
 
 
 def main():
@@ -106,23 +135,27 @@ def main():
     compile_parser.add_argument("--output", default="eval_pipeline.json")
 
     # run
-    run_parser = subparsers.add_parser("run", help="Pipeline をコンパイルして実行")
+    run_parser = subparsers.add_parser("run", help="Pipeline を実行")
     run_parser.add_argument("--search-type", default="hybrid",
                             choices=["vector", "elasticsearch", "hybrid"])
     run_parser.add_argument("--top-k", type=int, default=10)
     run_parser.add_argument("--async", dest="run_async", action="store_true")
+    run_parser.add_argument("--template-path", type=str, default=None,
+                            help="コンパイル済み JSON パス（ローカル or gs://）。省略時は自動コンパイル")
 
     # schedule
-    schedule_parser = subparsers.add_parser("schedule", help="週次スケジュールを作成")
+    schedule_parser = subparsers.add_parser("schedule", help="週次スケジュールを作成（冪等）")
     schedule_parser.add_argument("--cron", default="0 22 * * 0",
                                 help="cron式（デフォルト: 毎週日曜22:00）")
+    schedule_parser.add_argument("--template-path", type=str, default=None,
+                                help="コンパイル済み JSON パス（ローカル or gs://）。省略時は自動コンパイル")
 
     args = parser.parse_args()
 
     if args.command == "compile":
         compile_pipeline(args.output)
     elif args.command == "run":
-        template_path = compile_pipeline()
+        template_path = args.template_path or compile_pipeline()
         run_pipeline(
             template_path=template_path,
             search_type=args.search_type,
@@ -130,7 +163,7 @@ def main():
             sync=not args.run_async,
         )
     elif args.command == "schedule":
-        template_path = compile_pipeline()
+        template_path = args.template_path or compile_pipeline()
         create_schedule(template_path=template_path, cron=args.cron)
 
 

@@ -96,7 +96,7 @@ resource "google_cloud_run_v2_service" "api" {
 
       env {
         name  = "GOOGLE_AI_STUDIO_API_KEY"
-        value = var.gemini_api_key
+        value = var.google_ai_studio_api_key
       }
 
       resources {
@@ -221,3 +221,10 @@ resource "google_cloud_scheduler_job" "eval_schedule" {
 
   depends_on = [google_cloud_run_v2_job.eval]
 }
+
+# === Vertex AI Pipeline スケジュール ===
+# NOTE: Vertex AI Pipeline スケジュールは Terraform ではなく CI/CD (run_pipeline.py schedule) で管理。
+# 理由: google_vertex_ai_pipeline_schedule リソースが Terraform Provider に存在しないため。
+# IAM: doc-qa-runner SA は roles/aiplatform.user を保持（iam モジュールで管理）。
+# Pipeline JSON: gs://mlops-dev-a-doc-qa/pipeline-artifacts/eval_pipeline.json に CI/CD で配置。
+# 詳細: src/doc-qa/pipeline/run_pipeline.py schedule コマンドを参照。

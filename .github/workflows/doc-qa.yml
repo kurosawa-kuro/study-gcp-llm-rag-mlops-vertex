@@ -61,3 +61,34 @@ jobs:
         run: |
           IMAGE=asia-northeast1-docker.pkg.dev/mlops-dev-a/mlops-dev-a-docker/${{ matrix.image }}:latest
           ${{ matrix.deploy_cmd }}
+
+  # Vertex AI Pipeline スケジュール作成/更新（冪等）
+  # build-and-deploy で doc-qa-eval イメージ push 後に実行
+  deploy-pipeline:
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install KFP dependencies
+        run: pip install -r src/doc-qa/pipeline/requirements.txt
+      - name: Compile pipeline
+        run: |
+          cd src/doc-qa/pipeline
+          python run_pipeline.py compile --output eval_pipeline.json
+      - name: Upload pipeline JSON to GCS
+        run: |
+          gsutil cp src/doc-qa/pipeline/eval_pipeline.json \
+            gs://mlops-dev-a-doc-qa/pipeline-artifacts/eval_pipeline.json
+      - name: Create/update Vertex AI Pipeline schedule
+        env:
+          GOOGLE_AI_STUDIO_API_KEY: ${{ secrets.GOOGLE_AI_STUDIO_API_KEY }}
+        run: |
+          cd src/doc-qa/pipeline
+          python run_pipeline.py schedule \
+            --template-path gs://mlops-dev-a-doc-qa/pipeline-artifacts/eval_pipeline.json

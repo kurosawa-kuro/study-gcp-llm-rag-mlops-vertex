@@ -1,0 +1,58 @@
+name: Doc QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/doc-qa/**"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [ingestion, api]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          cd src/doc-qa/${{ matrix.component }}
+          pip install -r requirements-dev.txt
+      - name: Run tests
+        run: |
+          cd src/doc-qa/${{ matrix.component }}
+          pytest -v test_main.py
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - component: ingestion
+            image: doc-qa-ingestion
+            deploy_cmd: gcloud run jobs update doc-qa-ingestion --image $IMAGE --region asia-northeast1
+          - component: api
+            image: doc-qa-api
+            deploy_cmd: gcloud run services update doc-qa-api --image $IMAGE --region asia-northeast1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Configure Docker
+        run: gcloud auth configure-docker asia-northeast1-docker.pkg.dev --quiet
+      - name: Build and Push
+        run: |
+          IMAGE=asia-northeast1-docker.pkg.dev/mlops-dev-a/mlops-dev-a-docker/${{ matrix.image }}:latest
+          cd src/doc-qa/${{ matrix.component }}
+          docker build -t $IMAGE .
+          docker push $IMAGE
+      - name: Deploy
+        run: |
+          IMAGE=asia-northeast1-docker.pkg.dev/mlops-dev-a/mlops-dev-a-docker/${{ matrix.image }}:latest
+          ${{ matrix.deploy_cmd }}

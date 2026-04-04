@@ -4,70 +4,68 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MLOps・検索基盤・LLMの学習プロジェクト。Cloud Runベースで（Kubernetes不使用）MLパイプラインと検索基盤を構築。Vertex AI Pipeline（KFP v2）で学習→評価→品質ゲート→Champion比較→デプロイの6 Step Pipeline を実装済み。
+社内ドキュメント検索・QAシステム。Cloud Runベースで（Kubernetes不使用）ドキュメント取込パイプラインとQA APIを構築。
+GCSにアップロードされたPDF/Word/TXTをチャンク分割・Embedding化し、BigQuery Vector Search + Elasticsearch ハイブリッド検索で関連箇所を取得、Vertex AI Geminiで根拠付き回答を生成する。
 GCPプロジェクト: `mlops-dev-a`、リージョン: `asia-northeast1`
 
 ## Architecture
 
 ```
-[Cloud Run Job (batch)]
-   ├── データ取得（California Housing）
-   ├── 特徴量生成 → 学習（scikit-learn RandomForest）
-   ├── 評価（RMSE, MAE） → MLflow記録
-   ├── モデル保存 → [GCS models/]（リトライ付き）
-   ├── ログ出力 → [GCS logs/]
-   └── メトリクス投入 → [BigQuery mlops.metrics]（リトライ付き）
-
-[BigQuery]
-   └── metrics テーブル → 最良モデル選択（90日リテンション・日別パーティション）
-
-[Cloud Run Service (FastAPI API)]
-   ├── BigQueryから最良モデルパス取得（リトライ付き）
-   ├── GCSからモデルロード（リトライ付き）
-   └── POST /predict で推論レスポンス
-
-[Cloud Run Job (elastic-search)]
-   ├── Elastic Cloud 接続（Secret Manager経由でAPIキー取得）
-   ├── ドキュメント投入・検索
-   └── クリーンアップ
+[ユーザー]
+  └── PDFをGCSにアップロード
+            ↓
+[Cloud Run Job（Ingestion）]
+  ├── GCSからドキュメント取得
+  ├── テキスト抽出（PDF: pymupdf / Word: python-docx / TXT）
+  ├── チャンク分割（800文字・50文字オーバーラップ）
+  ├── Vertex AI Embedding API でベクトル化
+  ├── BigQuery documents テーブルに格納（Vector Search用）
+  └── Elasticsearch にインデックス登録（kuromoji全文検索用）
+            ↓
+[Cloud Scheduler]
+  └── 毎日 9:00 JST に自動Ingestion実行
+            ↓
+[Cloud Run Service（QA API）]
+  ├── POST /query  - 質問受信
+  ├── Vertex AI Embedding でクエリベクトル化
+  ├── ハイブリッド検索
+  │    ├── BigQuery Vector Search（意味検索 Top-5）
+  │    └── Elasticsearch 全文検索（kuromoji キーワード検索 Top-5）
+  ├── RRF（Reciprocal Rank Fusion）リランク
+  ├── プロンプト組み立て
+  └── Vertex AI Gemini で回答生成
+            ↓
+[レスポンス]
+  └── 回答文 + 根拠ドキュメント + 該当箇所
 
 [Elastic Cloud]
-   ├── Elasticsearch（データ格納・全文検索）
-   └── Kibana（管理UI・APIキー発行）
+  ├── Elasticsearch（kuromoji日本語全文検索）
+  └── Kibana（管理UI）
 
-[Vertex AI Pipeline（KFP v2・実装済み）]
-   ├── Step1: load_data（California Housingデータ取得・分割）
-   ├── Step2: train_model（RandomForest学習）
-   ├── Step3: evaluate_model（RMSE/MAE算出→GCS保存→BigQuery記録）
-   ├── Step4: quality_gate（RMSE閾値チェック→不合格時Discord通知）
-   ├── Step5: compare_champion（BigQuery Champion比較→改善なし時Discord通知）
-   └── Step6: deploy_model（Vertex AI Endpoint デプロイ→Discord通知）
-
-[Vertex AI（MVP実装済み）]
-   └── Notebook: 学習→Model Registry→Endpoint→推論→クリーンアップ
+[GitHub Actions]
+  ├── doc-qa: main push(src/doc-qa) → test → build → push → deploy
+  └── terraform: main push(terraform) → plan → apply
 ```
 
-- **batch/**: Cloud Run Job - データ取得→学習→評価(MLflow)→モデル保存(GCS)→ログ出力(GCS)→メトリクス投入(BigQuery)
-- **api/**: Cloud Run Service - BigQueryで最良モデル選択→GCSからロード→FastAPIで推論レスポンス
-- **pipeline/**: Vertex AI Pipeline（KFP v2） - 6 Stepの学習→評価→品質ゲート→Champion比較→デプロイ Pipeline
-- **elastic-search/**: Cloud Run Job - Elastic Cloud接続確認（Terraform管理、.envで設定一元管理）
-- **terraform/**: GCS, BigQuery, Cloud Run (Job/Service), Artifact Registry, Cloud Scheduler, Vertex AI IAM のIaC定義
-- **scripts/**: 共通ユーティリティ(core.py)、監視(batch/API)、ドリフト検知、デプロイ、リセット（Vertex AIクリーンアップ含む）
-- **notebooks/**: Vertex AI学習用ノートブック（MVP実装済み）
-- **docs/**: 各領域の仕様・設計書（vertex/, vertex-pipeline/, elastic-search/, llm/）
+- **src/doc-qa/ingestion/**: Cloud Run Job - GCS取得→テキスト抽出→チャンク分割→Embedding→BigQuery/Elasticsearch格納
+- **src/doc-qa/api/**: Cloud Run Service - FastAPI QA API（ハイブリッド検索→RRFリランク→Gemini回答生成）
+- **src/elastic-search/**: Elastic Cloud基盤（Terraform管理、接続確認用）
+- **terraform/**: GCS, BigQuery, Cloud Run (Job/Service), Artifact Registry, Cloud Scheduler, IAM のIaC定義
+- **scripts/**: 共通ユーティリティ(core.py)、監視(Ingestion/API)、アップロード、クエリテスト
+- **data/sample/**: サンプル社内規定ドキュメント（就業規則、経費精算規定、FAQ）
+- **docs/**: 仕様・設計書、移行ロードマップ
 
 ## Tech Stack
 
-- **ML**: scikit-learn, MLflow, pandas, Vertex AI (Model Registry, Endpoint, Pipelines)
-- **Pipeline**: KFP v2（Lightweight Python Components）、品質ゲート、Champion/Challenger比較
-- **LLM（予定）**: ELECTRA (日本語Embedding), FAISS, Vertex AI Gemini (RAG)
+- **LLM/RAG**: Vertex AI Embedding API, Vertex AI Gemini, BigQuery Vector Search
+- **検索**: Elasticsearch（kuromoji日本語全文検索）+ BigQuery Vector Search（意味検索）のハイブリッド
 - **API**: FastAPI (Cloud Run Service)
-- **検索**: Elastic Cloud (Elasticsearch + Kibana)
-- **Data**: BigQuery（評価メトリクス蓄積・最良モデル選択・90日リテンション）
-- **Infra**: Cloud Run (Job/Service), GCS, Artifact Registry, Cloud Scheduler, Secret Manager
+- **ドキュメント処理**: PyMuPDF, python-docx
+- **Data**: BigQuery（ドキュメントチャンク + Embedding格納）, GCS（ドキュメント格納）
+- **Infra**: Cloud Run (Job/Service), Artifact Registry, Cloud Scheduler, Secret Manager
 - **IaC**: Terraform（GCP + Elastic Cloud）
-- **CI/CD**: GitHub Actions（batch/API/Terraform 3本）
-- **監視**: Discord通知（batch監視・API健全性・モデルドリフト検知・Pipeline通知）
+- **CI/CD**: GitHub Actions（doc-qa + Terraform）
+- **監視**: Discord通知（Ingestion監視・API健全性）
 - **ログ**: JSON構造化ログ（Cloud Logging互換）
 
 ## GCP Setup
@@ -76,6 +74,7 @@ GCPプロジェクト: `mlops-dev-a`、リージョン: `asia-northeast1`
 gcloud init
 gcloud config set compute/region asia-northeast1
 gcloud config set run/region asia-northeast1
+gcloud services enable aiplatform.googleapis.com
 ```
 
 ## Language

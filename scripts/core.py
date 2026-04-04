@@ -11,7 +11,7 @@ from pathlib import Path
 # === プロジェクト定数 ===
 PROJECT_ID = "mlops-dev-a"
 REGION = "asia-northeast1"
-DATASET = "mlops"
+DATASET = "doc_qa_dataset"
 
 # === Discord通知カラー ===
 COLOR_SUCCESS = 3066993   # 緑
@@ -20,10 +20,10 @@ COLOR_FAILURE = 15158332  # 赤
 
 ROOT = Path(__file__).resolve().parent.parent
 
-logger = logging.getLogger("mlops")
+logger = logging.getLogger("doc-qa")
 
 
-def setup_logging(name: str = "mlops") -> logging.Logger:
+def setup_logging(name: str = "doc-qa") -> logging.Logger:
     """JSON構造化ログを設定する。Cloud Logging互換。"""
     log = logging.getLogger(name)
     if log.handlers:

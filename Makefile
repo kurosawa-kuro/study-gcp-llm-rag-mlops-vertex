@@ -3,72 +3,49 @@ PROJECT_ID := mlops-dev-a
 REGION := asia-northeast1
 REPO := mlops-dev-a-docker
 TAG := latest
-BUCKET := mlops-dev-a-data
+BUCKET := mlops-dev-a-doc-qa
 IMAGE_BASE := $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(REPO)
 
 include makefiles/gcp.mk
 include makefiles/terraform.mk
-include makefiles/batch.mk
-include makefiles/api.mk
-include makefiles/pipeline.mk
+include makefiles/ingestion.mk
+include makefiles/doc-qa-api.mk
 
 # === 統合コマンド ===
-.PHONY: deploy reset test help
+.PHONY: deploy test help
 
-deploy: batch-deploy api-deploy  ## 全体デプロイ（インフラ + batch + API）
+deploy: ingestion-deploy qa-api-deploy  ## 全体デプロイ（Ingestion + QA API）
 
-test: batch-test api-test  ## 全テスト一括実行
-
-reset:  ## 全リソース削除 & ローカルクリーン（Vertex AI Endpoint/Model含む）
-	python3 scripts/reset_all.py
+test: ingestion-test qa-api-test  ## 全テスト一括実行
 
 help:  ## コマンド一覧表示
 	@echo "=== Setup ==="
 	@echo "  make gcp-setup          GCP初回セットアップ一括"
-	@echo "  make gcp-setup-apis     API有効化"
-	@echo "  make gcp-setup-sa       Terraform SA権限付与"
-	@echo "  make gcp-setup-vertex   Vertex AI Pipeline用IAM付与"
-	@echo "  make gcp-setup-docker   Docker認証設定"
 	@echo ""
 	@echo "=== Terraform ==="
 	@echo "  make tf-init            初期化"
 	@echo "  make tf-plan            差分確認"
 	@echo "  make tf-apply           全リソース反映"
-	@echo "  make tf-apply-repo      Artifact Registryのみ反映"
 	@echo "  make tf-destroy         全リソース削除"
 	@echo "  make tf-fmt             フォーマット"
-	@echo "  make tf-validate        構文チェック"
 	@echo ""
-	@echo "=== Batch (ML学習パイプライン) ==="
-	@echo "  make batch-test         テスト実行"
-	@echo "  make batch-run-local    ローカルでML学習実行"
-	@echo "  make batch-build        Dockerイメージビルド"
-	@echo "  make batch-push         ビルド & push"
-	@echo "  make batch-deploy       冪等デプロイ（repo→push→job）"
-	@echo "  make batch-run          Cloud Run Job実行"
-	@echo "  make batch-logs         実行履歴確認"
-	@echo "  make batch-monitor      監視 + Discord通知"
-	@echo "  make batch-drift        モデルドリフト検知"
-	@echo "  make batch-ui           MLflow UI起動"
+	@echo "=== Ingestion（ドキュメント取込） ==="
+	@echo "  make ingestion-test     テスト実行"
+	@echo "  make ingestion-build    Dockerイメージビルド"
+	@echo "  make ingestion-push     ビルド & push"
+	@echo "  make ingestion-deploy   冪等デプロイ"
+	@echo "  make ingestion-run      Cloud Run Job実行"
+	@echo "  make ingestion-logs     実行履歴確認"
 	@echo ""
-	@echo "=== API (推論サービス) ==="
-	@echo "  make api-test           APIテスト実行"
-	@echo "  make api-build          APIイメージビルド"
-	@echo "  make api-push           APIイメージ push"
-	@echo "  make api-deploy         API冪等デプロイ"
-	@echo "  make api-logs           APIログ確認"
-	@echo "  make api-url            APIのURL表示"
-	@echo "  make api-monitor        API健全性チェック"
-	@echo ""
-	@echo "=== Vertex AI Pipeline ==="
-	@echo "  make pipeline-install   依存パッケージインストール"
-	@echo "  make pipeline-compile   コンパイル（pipeline.json生成）"
-	@echo "  make pipeline-run       コンパイル & 実行（同期）"
-	@echo "  make pipeline-run-async コンパイル & 実行（非同期）"
-	@echo "  make pipeline-status    実行履歴表示"
-	@echo "  make pipeline-clean     Endpoint/Model全削除（冪等）"
+	@echo "=== QA API（社内ドキュメントQA） ==="
+	@echo "  make qa-api-test        テスト実行"
+	@echo "  make qa-api-build       Dockerイメージビルド"
+	@echo "  make qa-api-push        ビルド & push"
+	@echo "  make qa-api-deploy      冪等デプロイ"
+	@echo "  make qa-api-logs        ログ確認"
+	@echo "  make qa-api-url         URL表示"
+	@echo "  make qa-api-monitor     健全性チェック + Discord通知"
 	@echo ""
 	@echo "=== 統合 ==="
-	@echo "  make deploy             全体デプロイ（batch + API）"
+	@echo "  make deploy             全体デプロイ（Ingestion + QA API）"
 	@echo "  make test               全テスト一括実行"
-	@echo "  make reset              全リソース削除 & クリーン（Vertex AI含む）"

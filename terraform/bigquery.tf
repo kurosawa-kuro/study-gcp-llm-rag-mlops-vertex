@@ -1,27 +1,27 @@
-resource "google_bigquery_dataset" "mlops" {
-  dataset_id                 = "mlops"
-  location                   = var.region
-  default_table_expiration_ms = 7776000000 # 90日（ミリ秒）
+resource "google_bigquery_dataset" "doc_qa" {
+  dataset_id = var.bq_dataset
+  location   = var.region
 }
 
-resource "google_bigquery_table" "metrics" {
-  dataset_id          = google_bigquery_dataset.mlops.dataset_id
-  table_id            = "metrics"
+resource "google_bigquery_table" "documents" {
+  dataset_id          = google_bigquery_dataset.doc_qa.dataset_id
+  table_id            = "documents"
   deletion_protection = false
 
-  time_partitioning {
-    type  = "DAY"
-    field = "timestamp"
-    expiration_ms = 7776000000 # 90日
-  }
-
   schema = jsonencode([
-    { name = "run_id", type = "STRING", mode = "REQUIRED" },
-    { name = "timestamp", type = "TIMESTAMP", mode = "REQUIRED" },
-    { name = "rmse", type = "FLOAT64", mode = "REQUIRED" },
-    { name = "mae", type = "FLOAT64", mode = "REQUIRED" },
-    { name = "model_path", type = "STRING", mode = "NULLABLE" },
-    { name = "n_estimators", type = "INT64", mode = "NULLABLE" },
-    { name = "max_depth", type = "INT64", mode = "NULLABLE" },
+    { name = "id", type = "STRING", mode = "REQUIRED", description = "チャンクID（UUID）" },
+    { name = "doc_id", type = "STRING", mode = "REQUIRED", description = "元ドキュメントID" },
+    { name = "doc_name", type = "STRING", mode = "REQUIRED", description = "ファイル名" },
+    { name = "content", type = "STRING", mode = "REQUIRED", description = "チャンクテキスト" },
+    { name = "chunk_index", type = "INT64", mode = "NULLABLE", description = "チャンク番号" },
+    { name = "page_number", type = "INT64", mode = "NULLABLE", description = "ページ番号" },
+    { name = "gcs_path", type = "STRING", mode = "NULLABLE", description = "GCS上のパス" },
+    { name = "embedding", type = "FLOAT64", mode = "REPEATED", description = "Vertex AI Embedding（768次元）" },
+    { name = "created_at", type = "TIMESTAMP", mode = "NULLABLE", description = "作成日時" },
   ])
 }
+
+# NOTE: BigQuery Vector Index は Terraform 未対応のため、手動で以下を実行する:
+# CREATE VECTOR INDEX embedding_index
+# ON doc_qa_dataset.documents(embedding)
+# OPTIONS (distance_type = 'COSINE');

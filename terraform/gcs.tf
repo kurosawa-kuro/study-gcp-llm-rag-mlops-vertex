@@ -1,4 +1,4 @@
-resource "google_storage_bucket" "data" {
+resource "google_storage_bucket" "doc_qa" {
   name     = var.bucket_name
   location = var.region
 

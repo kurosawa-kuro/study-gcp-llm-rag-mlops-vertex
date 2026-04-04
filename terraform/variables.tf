@@ -42,7 +42,8 @@ variable "elastic_cloud_api_key" {
   sensitive   = true
 }
 
-variable "elastic_api_key" {
-  description = "Elasticsearch 接続用APIキー（Secret Managerに格納）"
+# === Gemini ===
+variable "gemini_api_key" {
+  description = "Google AI Studio APIキー"
   sensitive   = true
 }

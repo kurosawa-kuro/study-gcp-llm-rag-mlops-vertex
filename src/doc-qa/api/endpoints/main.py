@@ -67,12 +67,16 @@ bq_client: bigquery.Client | None = None
 es_client: Elasticsearch | None = None
 
 
-def _get_es_credentials() -> tuple[str, str]:
-    client = secretmanager.SecretManagerServiceClient()
+def _get_es_client() -> Elasticsearch:
+    """Secret Manager から接続情報を取得して ES クライアントを返す。"""
+    sm = secretmanager.SecretManagerServiceClient()
     name = f"projects/{GCP_PROJECT}/secrets/{ES_SECRET_NAME}/versions/latest"
-    response = client.access_secret_version(request={"name": name})
+    response = sm.access_secret_version(request={"name": name})
     secret = json.loads(response.payload.data.decode("utf-8"))
-    return secret["cloud_url"], secret["api_key"]
+    return Elasticsearch(
+        secret["cloud_url"],
+        basic_auth=(secret["username"], secret["password"]),
+    )
 
 
 @asynccontextmanager
@@ -81,8 +85,7 @@ async def lifespan(app: FastAPI):
     logger.info("QA API 起動中...")
     vertexai.init(project=GCP_PROJECT, location=get("gcp.region", "asia-northeast1"))
     bq_client = bigquery.Client(project=GCP_PROJECT)
-    es_url, es_key = _get_es_credentials()
-    es_client = Elasticsearch(es_url, api_key=es_key)
+    es_client = _get_es_client()
     logger.info("QA API 起動完了")
     yield
     logger.info("QA API シャットダウン")

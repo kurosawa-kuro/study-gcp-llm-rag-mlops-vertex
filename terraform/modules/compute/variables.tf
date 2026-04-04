@@ -26,3 +26,9 @@ variable "es_secret_name" {
 variable "service_account_email" {
   type = string
 }
+
+variable "gemini_api_key" {
+  description = "Google AI Studio APIキー"
+  type        = string
+  sensitive   = true
+}

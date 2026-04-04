@@ -20,7 +20,7 @@ from extract.extractor import extract_text
 from extract.chunker import split_into_chunks
 from embed.embedder import generate_embeddings
 from store.bq_writer import write_chunks_to_bq
-from store.es_writer import create_es_client, write_chunks_to_es
+from store.es_writer import write_chunks_to_es
 
 logger = setup_logging("doc-qa")
 
@@ -40,14 +40,18 @@ SUPPORTED_EXTENSIONS = tuple(get("ingestion.supported_extensions", [".pdf", ".do
 ES_INDEX = get("elasticsearch.index_name", "doc-qa")
 
 
-def get_es_credentials() -> tuple[str, str]:
-    """Secret Manager から Elastic Cloud の接続情報を取得する。"""
+def get_es_client():
+    """Secret Manager から接続情報を取得して ES クライアントを返す。"""
     import json
-    client = secretmanager.SecretManagerServiceClient()
+    from elasticsearch import Elasticsearch
+    sm = secretmanager.SecretManagerServiceClient()
     name = f"projects/{GCP_PROJECT}/secrets/{ES_SECRET_NAME}/versions/latest"
-    response = client.access_secret_version(request={"name": name})
+    response = sm.access_secret_version(request={"name": name})
     secret = json.loads(response.payload.data.decode("utf-8"))
-    return secret["cloud_url"], secret["api_key"]
+    return Elasticsearch(
+        secret["cloud_url"],
+        basic_auth=(secret["username"], secret["password"]),
+    )
 
 
 def list_documents(gcs_client: storage.Client, bucket_name: str) -> list[storage.Blob]:
@@ -97,8 +101,7 @@ def main() -> None:
 
     gcs_client = storage.Client(project=GCP_PROJECT)
     bq_client = bigquery.Client(project=GCP_PROJECT)
-    es_url, es_key = get_es_credentials()
-    es_client = create_es_client(es_url, es_key)
+    es_client = get_es_client()
 
     if TARGET_GCS_PATH:
         bucket_name, blob_name = TARGET_GCS_PATH.replace("gs://", "").split("/", 1)

@@ -38,8 +38,9 @@ GCSにドキュメントをアップロードするだけでAIが根拠ドキュ
 ### 初回セットアップ
 
 ```bash
-python scripts/setup_gcp.py
-python scripts/setup_terraform.py
+python3 scripts/setup/gcp.py       # 未インストール時のみ実行
+python3 scripts/setup/terraform.py  # 未インストール時のみ実行
+gcloud config list                  # 設定済みか確認（未設定なら gcloud init）
 make gcp-setup
 make tf-apply
 ```
@@ -47,9 +48,9 @@ make tf-apply
 ### ドキュメント取込 → QAクエリ
 
 ```bash
-python scripts/upload_doc.py data/sample/
+python3 scripts/ops/upload_doc.py data/sample/
 make ingestion-run
-python scripts/query.py "有給休暇の申請手続きを教えてください"
+python3 scripts/ops/query.py "有給休暇の申請手続きを教えてください"
 ```
 
 ### デプロイ・テスト

@@ -1,15 +1,16 @@
-"""Vertex AI Gemini 回答生成モジュール"""
+"""Google AI Studio Gemini 回答生成モジュール"""
 
 from __future__ import annotations
 
 import logging
+import os
 
 from config import get
-from vertexai.generative_models import GenerativeModel
+import google.generativeai as genai
 
 logger = logging.getLogger("doc-qa")
 
-_MODEL_NAME = get("api.gemini_model", "gemini-2.0-flash")
+_MODEL_NAME = get("api.gemini_model", "gemini-2.5-flash")
 
 SYSTEM_PROMPT = """あなたは社内ドキュメントの専門家です。
 以下のドキュメントのみを根拠として日本語で正確に回答してください。
@@ -18,16 +19,19 @@ SYSTEM_PROMPT = """あなたは社内ドキュメントの専門家です。
 
 def generate_answer(query: str, context_docs: list[dict]) -> str:
     """検索結果を元に Gemini で回答を生成する。"""
-    context = _build_context(context_docs)
-    prompt = f"""{SYSTEM_PROMPT}
+    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
-【参考ドキュメント】
+    context = _build_context(context_docs)
+    prompt = f"""【参考ドキュメント】
 {context}
 
 【質問】
 {query}"""
 
-    model = GenerativeModel(_MODEL_NAME)
+    model = genai.GenerativeModel(
+        model_name=_MODEL_NAME,
+        system_instruction=SYSTEM_PROMPT,
+    )
     response = model.generate_content(prompt)
     answer = response.text
     logger.info(f"回答生成完了: {len(answer)} 文字")

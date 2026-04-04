@@ -31,10 +31,11 @@ GCPプロジェクト: `mlops-dev-a`、リージョン: `asia-northeast1`
   └── GET /health → ヘルスチェック
 ```
 
-- **src/doc-qa/ingestion/**: Cloud Run Job - ドキュメント取込パイプライン
-- **src/doc-qa/api/**: Cloud Run Service - FastAPI QA API
-- **scripts/config.py**: 共通設定ローダー（application.yml キャッシュ・ロギング）
-- **scripts/core.py**: 共通ユーティリティ（Discord通知・env読み込み・dispatch）
+- **src/doc-qa/ingestion/**: Cloud Run Job - ドキュメント取込（extract/ embed/ store/）
+- **src/doc-qa/api/**: Cloud Run Service - QA API（endpoints/ search/ generation/）
+- **shared/config.py**: 共通設定ローダー（application.yml キャッシュ・ロギング）
+- **shared/core.py**: スクリプト基盤（gcloud・run・notify_discord・load_env）
+- **scripts/**: 運用スクリプト（monitor/ ops/ setup/）
 - **terraform/**: GCP + Elastic Cloud IaC（モジュール分離: data/compute/elastic/registry/iam）
 - **env/config/application.yml**: プロジェクト固有設定（非シークレット）の唯一の定義元
 - **env/secret/credentials.yml**: 全クレデンシャル統合
@@ -45,12 +46,12 @@ GCPプロジェクト: `mlops-dev-a`、リージョン: `asia-northeast1`
 ```
 env/config/application.yml    ← 全設定の唯一の定義元（Single Source of Truth）
         ↓
-scripts/config.py             ← 唯一の設定ローダー（キャッシュ付き）
+shared/config.py              ← 唯一の設定ローダー（キャッシュ付き）
         ↓
     ┌───┴───────────────┐
     ↓                   ↓
-ingestion/main.py     api/main.py      ← from config import get, setup_logging
-scripts/core.py       scripts/es_*.py  ← from config import get
+ingestion/main.py     api/endpoints/main.py   ← from config import get, setup_logging
+shared/core.py        scripts/*/*.py          ← from core import ...
 ```
 
 設定解決の優先順位: **環境変数 > application.yml > ハードコードデフォルト**

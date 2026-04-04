@@ -94,6 +94,11 @@ resource "google_cloud_run_v2_service" "api" {
         value = var.bucket_name
       }
 
+      env {
+        name  = "GEMINI_API_KEY"
+        value = var.gemini_api_key
+      }
+
       resources {
         limits = {
           memory = "1Gi"

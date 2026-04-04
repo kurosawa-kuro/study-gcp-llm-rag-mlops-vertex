@@ -14,7 +14,7 @@ INDEX_SETTINGS = {
             "id":          {"type": "keyword"},
             "doc_id":      {"type": "keyword"},
             "doc_name":    {"type": "keyword"},
-            "content":     {"type": "text", "analyzer": "kuromoji"},
+            "content":     {"type": "text", "analyzer": "standard"},
             "chunk_index": {"type": "integer"},
             "page_number": {"type": "integer"},
             "gcs_path":    {"type": "keyword"},

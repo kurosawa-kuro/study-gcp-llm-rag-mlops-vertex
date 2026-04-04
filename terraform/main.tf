@@ -35,7 +35,6 @@ module "elastic" {
   region          = var.region
   deployment_name = var.es_deployment_name
   secret_name     = var.es_secret_name
-  elastic_api_key = var.elastic_api_key
 }
 
 # --- IAM（SA + 権限バインディング）---
@@ -59,4 +58,5 @@ module "compute" {
   bq_dataset            = module.data.bq_dataset_id
   es_secret_name        = module.elastic.secret_name
   service_account_email = module.iam.service_account_email
+  gemini_api_key        = var.gemini_api_key
 }

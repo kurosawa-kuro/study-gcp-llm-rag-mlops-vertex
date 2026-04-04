@@ -23,14 +23,10 @@ def write_chunks_to_bq(
     chunks: list[dict],
     embeddings: list[list[float]],
 ) -> int:
-    """チャンクと Embedding を BigQuery に書き込む（冪等）。
-
-    Returns:
-        書き込んだ行数
-    """
+    """チャンクと Embedding を BigQuery に書き込む（冪等）。"""
     table_ref = f"{client.project}.{dataset}.{table}"
 
-    # 冪等性: 同一 doc_id の既存行を削除してから挿入
+    # 冪等性: 同一 doc_id の既存行を削除（ストリーミングバッファ中は無視）
     _delete_existing(client, table_ref, doc_id)
 
     now = datetime.now(timezone.utc).isoformat()
@@ -54,12 +50,18 @@ def write_chunks_to_bq(
 
 
 def _delete_existing(client: bigquery.Client, table_ref: str, doc_id: str) -> None:
-    """既存の doc_id のデータを削除する（冪等性確保）。"""
+    """既存の doc_id のデータを削除する。ストリーミングバッファ中の場合はスキップ。"""
     query = f"DELETE FROM `{table_ref}` WHERE doc_id = @doc_id"
     job_config = bigquery.QueryJobConfig(
         query_parameters=[bigquery.ScalarQueryParameter("doc_id", "STRING", doc_id)]
     )
-    client.query(query, job_config=job_config).result()
+    try:
+        client.query(query, job_config=job_config).result()
+    except Exception as e:
+        if "streaming buffer" in str(e).lower():
+            logger.warning(f"ストリーミングバッファ中のため削除スキップ (doc_id={doc_id})")
+        else:
+            raise
 
 
 def _insert_with_retry(client: bigquery.Client, table_ref: str, rows: list[dict]) -> None:

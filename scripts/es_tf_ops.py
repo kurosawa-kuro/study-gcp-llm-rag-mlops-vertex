@@ -1,16 +1,17 @@
-"""Terraformオペレーション"""
+"""Elastic Cloud 関連 Terraform操作（統合済み terraform/ を参照）"""
 import subprocess
+from pathlib import Path
 
-from config import JOB_NAME, PROJECT_ID, REGION, REPO_NAME, SECRET_NAME, dispatch
+from es_config import PROJECT_ID, SECRET_NAME
+from core import dispatch
 
-TF_DIR = "terraform"
+TF_DIR = str(Path(__file__).resolve().parent.parent / "terraform")
 
 INFRA_TARGETS = [
-    "-target=ec_deployment.hello",
-    "-target=google_artifact_registry_repository.hello",
+    "-target=ec_deployment.doc_qa",
     "-target=google_secret_manager_secret.elastic_api_key",
     "-target=google_secret_manager_secret_version.elastic_api_key",
-    "-target=google_secret_manager_secret_iam_member.hello",
+    "-target=google_secret_manager_secret_iam_member.es_secret_access",
 ]
 
 
@@ -40,12 +41,8 @@ def destroy() -> None:
 
 def import_resources() -> None:
     imports = [
-        ("google_artifact_registry_repository.hello",
-         f"projects/{PROJECT_ID}/locations/{REGION}/repositories/{REPO_NAME}"),
         ("google_secret_manager_secret.elastic_api_key",
          f"projects/{PROJECT_ID}/secrets/{SECRET_NAME}"),
-        ("google_cloud_run_v2_job.hello",
-         f"projects/{PROJECT_ID}/locations/{REGION}/jobs/{JOB_NAME}"),
     ]
     for addr, resource_id in imports:
         tf_run(["import", addr, resource_id])

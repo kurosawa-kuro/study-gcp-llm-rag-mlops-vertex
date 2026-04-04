@@ -8,17 +8,30 @@ import sys
 import urllib.request
 from pathlib import Path
 
-# === プロジェクト定数 ===
-PROJECT_ID = "mlops-dev-a"
-REGION = "asia-northeast1"
-DATASET = "doc_qa_dataset"
+import yaml
+
+ROOT = Path(__file__).resolve().parent.parent
+_CONFIG_PATH = ROOT / "env" / "config" / "application.yml"
+
+
+def _load_app_config() -> dict:
+    if _CONFIG_PATH.exists():
+        with open(_CONFIG_PATH, encoding="utf-8") as f:
+            return yaml.safe_load(f)
+    return {}
+
+
+_APP_CFG = _load_app_config()
+
+# === プロジェクト定数（application.yml から読み込み）===
+PROJECT_ID = _APP_CFG.get("gcp", {}).get("project_id", "mlops-dev-a")
+REGION = _APP_CFG.get("gcp", {}).get("region", "asia-northeast1")
+DATASET = _APP_CFG.get("bigquery", {}).get("dataset", "doc_qa_dataset")
 
 # === Discord通知カラー ===
 COLOR_SUCCESS = 3066993   # 緑
 COLOR_WARNING = 16776960  # 黄
 COLOR_FAILURE = 15158332  # 赤
-
-ROOT = Path(__file__).resolve().parent.parent
 
 logger = logging.getLogger("doc-qa")
 
@@ -61,6 +74,15 @@ def run(cmd: str, allow_fail: bool = False) -> None:
     if result.returncode != 0 and not allow_fail:
         logger.error(f"コマンド失敗: '{cmd}' (code={result.returncode})")
         sys.exit(result.returncode)
+
+
+def dispatch(actions: dict[str, callable]) -> None:
+    """CLI引数でアクションを振り分ける汎用ディスパッチャー。"""
+    action = sys.argv[1] if len(sys.argv) > 1 else ""
+    if action not in actions:
+        print(f"Usage: {sys.argv[0]} [{'/'.join(actions)}]")
+        sys.exit(1)
+    actions[action]()
 
 
 def notify_discord(status: str, message: str, fields: list[dict] | None = None) -> None:

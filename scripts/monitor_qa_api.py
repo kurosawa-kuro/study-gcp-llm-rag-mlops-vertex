@@ -1,18 +1,18 @@
 """QA API 健全性チェック + Discord通知"""
 
 import urllib.request
+import subprocess
 
-from core import setup_logging, load_env, notify_discord
+from core import setup_logging, load_env, notify_discord, REGION
 
 logger = setup_logging("doc-qa-monitor")
 
 
 def main() -> None:
     load_env()
-    import subprocess
 
     result = subprocess.run(
-        "gcloud run services describe doc-qa-api --region asia-northeast1 --format 'value(status.url)'",
+        f"gcloud run services describe doc-qa-api --region {REGION} --format 'value(status.url)'",
         shell=True, capture_output=True, text=True,
     )
     url = result.stdout.strip()

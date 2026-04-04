@@ -7,8 +7,19 @@ set -euo pipefail
 QUERY="${1:?Usage: $0 <query> [top_k]}"
 TOP_K="${2:-5}"
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CONFIG="${SCRIPT_DIR}/../env/config/application.yml"
+
+# application.yml から region を取得
+REGION=$(python3 -c "
+import yaml
+with open('${CONFIG}') as f:
+    cfg = yaml.safe_load(f)
+print(cfg['gcp']['region'])
+")
+
 # API URL を取得
-API_URL=$(gcloud run services describe doc-qa-api --region asia-northeast1 --format 'value(status.url)')
+API_URL=$(gcloud run services describe doc-qa-api --region "${REGION}" --format 'value(status.url)')
 
 echo "=== QA クエリ送信 ==="
 echo "質問: ${QUERY}"

@@ -6,11 +6,23 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 5.0"
     }
+    ec = {
+      source  = "elastic/ec"
+      version = "~> 0.12"
+    }
   }
+}
+
+locals {
+  credentials = jsondecode(file("${path.module}/../env/secret/credentials.json"))
 }
 
 provider "google" {
   project     = var.project_id
   region      = var.region
-  credentials = file("credentials.json")
+  credentials = jsonencode(local.credentials.gcp_service_account)
+}
+
+provider "ec" {
+  apikey = var.elastic_cloud_api_key
 }

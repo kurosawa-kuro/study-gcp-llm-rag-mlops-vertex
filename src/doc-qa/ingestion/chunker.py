@@ -1,18 +1,19 @@
-"""チャンク分割モジュール（800文字・50文字オーバーラップ）"""
+"""チャンク分割モジュール（application.yml の設定値を使用）"""
 
 from __future__ import annotations
-
-CHUNK_SIZE = 800
-OVERLAP = 50
 
 
 def split_into_chunks(
     text: str,
     pages: list[dict],
-    chunk_size: int = CHUNK_SIZE,
-    overlap: int = OVERLAP,
+    chunk_size: int = 800,
+    overlap: int = 50,
 ) -> list[dict]:
     """テキストをチャンクに分割する。
+
+    Args:
+        chunk_size: application.yml の ingestion.chunk_size から渡される
+        overlap: application.yml の ingestion.chunk_overlap から渡される
 
     Returns:
         [{"chunk_index": int, "page_number": int, "content": str}, ...]

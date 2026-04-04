@@ -1,3 +1,13 @@
+# データ層: GCS（ドキュメント格納）+ BigQuery（Embedding + メタデータ）
+
+resource "google_storage_bucket" "doc_qa" {
+  name     = var.bucket_name
+  location = var.region
+
+  uniform_bucket_level_access = true
+  force_destroy               = true
+}
+
 resource "google_bigquery_dataset" "doc_qa" {
   dataset_id = var.bq_dataset
   location   = var.region

@@ -2,7 +2,7 @@ name: Doc QA
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - "src/doc-qa/**"
   workflow_dispatch:

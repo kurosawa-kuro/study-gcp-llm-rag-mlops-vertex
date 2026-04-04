@@ -1,4 +1,4 @@
-# === 共通設定 ===
+# === 共通設定（env/config/application.yml と同期すること）===
 PROJECT_ID := mlops-dev-a
 REGION := asia-northeast1
 REPO := mlops-dev-a-docker

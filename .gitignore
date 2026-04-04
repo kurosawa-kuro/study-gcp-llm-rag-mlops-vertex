@@ -4,7 +4,7 @@
 *.tfstate.backup
 *.tfvars
 *.tfplan
-terraform/credentials.json
+# credentials は env/secret/ で一元管理（env/ 自体が除外対象）
 .terraform.lock.hcl
 
 # ML outputs

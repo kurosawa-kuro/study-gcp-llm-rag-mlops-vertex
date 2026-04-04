@@ -2,16 +2,13 @@ include .env
 export
 
 # Terraform用環境変数（TF_VAR_で自動認識）
-export TF_VAR_project_id            := $(PROJECT_ID)
-export TF_VAR_region                := $(REGION)
-export TF_VAR_deployment_name       := $(DEPLOYMENT_NAME)
-export TF_VAR_job_name              := $(JOB_NAME)
-export TF_VAR_repo_name             := $(REPO_NAME)
-export TF_VAR_secret_name           := $(SECRET_NAME)
+# ※ Terraform定義は統合済み terraform/ を参照
 export TF_VAR_elastic_api_key       := $(ELASTIC_API_KEY)
 export TF_VAR_elastic_cloud_api_key := $(ELASTIC_CLOUD_API_KEY)
 
-SCRIPTS := PYTHONPATH=scripts python3
+# プロジェクトルートの scripts/ を参照
+SCRIPTS_DIR := $(shell cd ../.. && pwd)/scripts
+SCRIPTS := PYTHONPATH=$(SCRIPTS_DIR) python3
 
 .PHONY: run install build push docker-run clean \
         auth-docker execute logs \
@@ -27,27 +24,27 @@ install:
 	pip install -r requirements.txt
 
 build:
-	$(SCRIPTS) scripts/docker_ops.py build
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_docker_ops.py build
 
 push:
-	$(SCRIPTS) scripts/docker_ops.py push
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_docker_ops.py push
 
 docker-run:
-	$(SCRIPTS) scripts/docker_ops.py docker-run
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_docker_ops.py docker-run
 
 clean:
-	$(SCRIPTS) scripts/docker_ops.py clean
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_docker_ops.py clean
 
 # ===== GCP操作 =====
 
 auth-docker:
-	$(SCRIPTS) scripts/gcp_ops.py auth-docker
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_gcp_ops.py auth-docker
 
 execute:
-	$(SCRIPTS) scripts/gcp_ops.py execute
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_gcp_ops.py execute
 
 logs:
-	$(SCRIPTS) scripts/gcp_ops.py logs
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_gcp_ops.py logs
 
 # ===== デプロイ =====
 
@@ -63,22 +60,22 @@ destroy-all:
 # ===== Terraform =====
 
 tf-init:
-	$(SCRIPTS) scripts/tf_ops.py init
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_tf_ops.py init
 
 tf-plan:
-	$(SCRIPTS) scripts/tf_ops.py plan
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_tf_ops.py plan
 
 tf-apply:
-	$(SCRIPTS) scripts/tf_ops.py apply
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_tf_ops.py apply
 
 tf-apply-infra:
-	$(SCRIPTS) scripts/tf_ops.py apply-infra
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_tf_ops.py apply-infra
 
 tf-import:
-	$(SCRIPTS) scripts/tf_ops.py import
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_tf_ops.py import
 
 tf-destroy:
-	$(SCRIPTS) scripts/tf_ops.py destroy
+	$(SCRIPTS) $(SCRIPTS_DIR)/es_tf_ops.py destroy
 
 # ===== ヘルプ =====
 
@@ -104,6 +101,6 @@ help:
 	@echo "  make tf-init      プロバイダ初期化"
 	@echo "  make tf-plan      差分確認"
 	@echo "  make tf-apply     全リソース適用"
-	@echo "  make tf-apply-infra インフラのみ適用（Cloud Run Job除外）"
+	@echo "  make tf-apply-infra インフラのみ適用（Elastic Cloud関連のみ）"
 	@echo "  make tf-import    既存リソースをstateにimport"
 	@echo "  make tf-destroy   全リソース削除"

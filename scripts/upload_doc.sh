@@ -4,7 +4,16 @@
 
 set -euo pipefail
 
-BUCKET="mlops-dev-a-doc-qa"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CONFIG="${SCRIPT_DIR}/../env/config/application.yml"
+
+# application.yml から bucket_name を取得
+BUCKET=$(python3 -c "
+import yaml
+with open('${CONFIG}') as f:
+    cfg = yaml.safe_load(f)
+print(cfg['storage']['bucket_name'])
+")
 
 if [ $# -eq 0 ]; then
   echo "Usage: $0 <file_or_directory>"

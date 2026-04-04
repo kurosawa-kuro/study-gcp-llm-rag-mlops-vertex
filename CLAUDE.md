@@ -49,8 +49,8 @@ GCPプロジェクト: `mlops-dev-a`、リージョン: `asia-northeast1`
 
 - **src/doc-qa/ingestion/**: Cloud Run Job - GCS取得→テキスト抽出→チャンク分割→Embedding→BigQuery/Elasticsearch格納
 - **src/doc-qa/api/**: Cloud Run Service - FastAPI QA API（ハイブリッド検索→RRFリランク→Gemini回答生成）
-- **src/elastic-search/**: Elastic Cloud基盤（Terraform管理、接続確認用）
-- **terraform/**: GCS, BigQuery, Cloud Run (Job/Service), Artifact Registry, Cloud Scheduler, IAM のIaC定義
+- **src/elastic-search/**: Elastic Cloud接続確認用（PoC）
+- **terraform/**: GCS, BigQuery, Cloud Run (Job/Service), Artifact Registry, Cloud Scheduler, Elastic Cloud, Secret Manager, IAM のIaC定義（統合済み）
 - **scripts/**: 共通ユーティリティ(core.py)、監視(Ingestion/API)、アップロード、クエリテスト
 - **data/sample/**: サンプル社内規定ドキュメント（就業規則、経費精算規定、FAQ）
 - **docs/**: 仕様・設計書、移行ロードマップ

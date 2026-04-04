@@ -1,0 +1,20 @@
+{"query_id": "q001", "query": "有給休暇の申請手続きを教えてください", "expected_answer_keywords": ["3営業日前", "上長", "申請"], "relevant_source": "就業規則_sample.txt", "relevant_keywords": ["年次有給休暇", "3営業日前", "上長"]}
+{"query_id": "q002", "query": "リモートワークの申請方法を教えてください", "expected_answer_keywords": ["部門長", "承認", "コアタイム"], "relevant_source": "就業規則_sample.txt", "relevant_keywords": ["リモートワーク", "部門長", "承認"]}
+{"query_id": "q003", "query": "勤務時間は何時から何時ですか", "expected_answer_keywords": ["午前9時", "午後6時"], "relevant_source": "就業規則_sample.txt", "relevant_keywords": ["始業時刻", "午前9時", "午後6時"]}
+{"query_id": "q004", "query": "フレックスタイムのコアタイムは何時ですか", "expected_answer_keywords": ["午前10時", "午後3時"], "relevant_source": "就業規則_sample.txt", "relevant_keywords": ["コアタイム", "午前10時", "午後3時"]}
+{"query_id": "q005", "query": "残業手当はどのように計算されますか", "expected_answer_keywords": ["25%", "深夜", "50%"], "relevant_source": "就業規則_sample.txt", "relevant_keywords": ["時間外勤務手当", "25%", "50%"]}
+{"query_id": "q006", "query": "結婚した場合の特別休暇は何日ですか", "expected_answer_keywords": ["5日"], "relevant_source": "就業規則_sample.txt", "relevant_keywords": ["特別休暇", "結婚", "5日"]}
+{"query_id": "q007", "query": "機密情報の取り扱いで注意すべきことは何ですか", "expected_answer_keywords": ["漏洩", "USBメモリ", "クラウドストレージ"], "relevant_source": "就業規則_sample.txt", "relevant_keywords": ["機密情報", "漏洩", "USBメモリ"]}
+{"query_id": "q008", "query": "交通費の精算方法を教えてください", "expected_answer_keywords": ["公共交通機関", "経済的"], "relevant_source": "経費精算規定_sample.txt", "relevant_keywords": ["交通費", "公共交通機関", "経済的"]}
+{"query_id": "q009", "query": "出張の宿泊費上限はいくらですか", "expected_answer_keywords": ["10,000円", "12,000円"], "relevant_source": "経費精算規定_sample.txt", "relevant_keywords": ["宿泊費", "10,000円", "12,000円"]}
+{"query_id": "q010", "query": "領収書が必要な金額の基準は何円ですか", "expected_answer_keywords": ["3,000円"], "relevant_source": "経費精算規定_sample.txt", "relevant_keywords": ["領収書", "3,000円"]}
+{"query_id": "q011", "query": "経費精算の期限はいつまでですか", "expected_answer_keywords": ["1ヶ月以内"], "relevant_source": "経費精算規定_sample.txt", "relevant_keywords": ["精算申請", "1ヶ月以内"]}
+{"query_id": "q012", "query": "接待交際費の上限と申請方法を教えてください", "expected_answer_keywords": ["30,000円", "部門長", "承認"], "relevant_source": "経費精算規定_sample.txt", "relevant_keywords": ["接待交際費", "30,000円", "部門長"]}
+{"query_id": "q013", "query": "タクシーは経費で使えますか", "expected_answer_keywords": ["深夜", "午後10時", "重量物"], "relevant_source": "経費精算規定_sample.txt", "relevant_keywords": ["タクシー", "深夜", "重量物"]}
+{"query_id": "q014", "query": "出張の日当はいくらですか", "expected_answer_keywords": ["2,000円", "3,000円"], "relevant_source": "経費精算規定_sample.txt", "relevant_keywords": ["日当", "2,000円", "3,000円"]}
+{"query_id": "q015", "query": "会議で使える飲食費の上限はいくらですか", "expected_answer_keywords": ["3,000円", "1人あたり"], "relevant_source": "経費精算規定_sample.txt", "relevant_keywords": ["会議費", "3,000円", "1人あたり"]}
+{"query_id": "q016", "query": "通勤手当の上限はいくらですか", "expected_answer_keywords": ["50,000円"], "relevant_source": "就業規則_sample.txt", "relevant_keywords": ["通勤手当", "50,000円"]}
+{"query_id": "q017", "query": "有給休暇は入社後いつから取得できますか", "expected_answer_keywords": ["6ヶ月", "10日"], "relevant_source": "就業規則_sample.txt", "relevant_keywords": ["入社6ヶ月", "年次有給休暇", "10日"]}
+{"query_id": "q018", "query": "休日はいつですか", "expected_answer_keywords": ["土曜日", "日曜日", "祝日"], "relevant_source": "就業規則_sample.txt", "relevant_keywords": ["休日", "土曜日", "日曜日"]}
+{"query_id": "q019", "query": "経費の不正請求をした場合どうなりますか", "expected_answer_keywords": ["懲戒処分", "全額返還"], "relevant_source": "経費精算規定_sample.txt", "relevant_keywords": ["不正請求", "懲戒処分", "全額返還"]}
+{"query_id": "q020", "query": "裁判員に選ばれた場合、休暇は取れますか", "expected_answer_keywords": ["裁判員", "特別休暇", "必要な日数"], "relevant_source": "就業規則_sample.txt", "relevant_keywords": ["裁判員", "特別休暇", "必要な日数"]}

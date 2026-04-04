@@ -35,7 +35,7 @@ GCPプロジェクト: `mlops-dev-a`、リージョン: `asia-northeast1`
 - **src/doc-qa/api/**: Cloud Run Service - QA API（endpoints/ search/ generation/）
 - **shared/config.py**: 共通設定ローダー（application.yml キャッシュ・ロギング）
 - **shared/core.py**: スクリプト基盤（gcloud・run・notify_discord・load_env）
-- **scripts/**: 運用スクリプト（monitor/ ops/ setup/）
+- **scripts/**: 運用スクリプト（eval/ monitor/ ops/ setup/）
 - **terraform/**: GCP + Elastic Cloud IaC（モジュール分離: data/compute/elastic/registry/iam）
 - **env/config/application.yml**: プロジェクト固有設定（非シークレット）の唯一の定義元
 - **env/secret/credentials.yml**: 全クレデンシャル統合
@@ -66,6 +66,7 @@ shared/core.py        scripts/*/*.py          ← from core import ...
 - **CI/CD**: GitHub Actions（doc-qa + Terraform）
 - **監視**: Discord通知
 - **ログ**: JSON構造化ログ（Cloud Logging互換）
+- **評価**: Recall@K / MRR / Exact Match / ROUGE-L（scripts/eval/）
 
 ## Docker Build
 

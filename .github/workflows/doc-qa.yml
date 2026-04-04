@@ -6,6 +6,7 @@ on:
     paths:
       - "src/doc-qa/**"
       - "shared/config.py"
+      - "scripts/eval/**"
       - "env/config/application.yml"
   workflow_dispatch:
 
@@ -41,6 +42,9 @@ jobs:
           - component: api
             image: doc-qa-api
             deploy_cmd: gcloud run services update doc-qa-api --image $IMAGE --region asia-northeast1
+          - component: pipeline
+            image: doc-qa-eval
+            deploy_cmd: gcloud run jobs update doc-qa-eval --image $IMAGE --region asia-northeast1
     steps:
       - uses: actions/checkout@v4
       - uses: google-github-actions/auth@v2

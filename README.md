@@ -22,7 +22,9 @@ GCSにドキュメントをアップロードするだけでAIが根拠ドキュ
 │   ├── common/             # 共有ライブラリ（config.py + core.py）
 │   ├── ingestion/          # ドキュメント取込パイプライン
 │   └── api/                # QA API（FastAPI）
-├── scripts/                # 運用スクリプト（全て Python）
+├── scripts/
+│   ├── eval/               # RAG品質評価（Recall@K / MRR / Exact Match / ROUGE-L）
+│   └── ...                 # 運用スクリプト（monitor / ops / setup）
 ├── terraform/modules/      # IaC（data / compute / elastic / registry / iam）
 ├── env/
 │   ├── config/application.yml  # プロジェクト設定（非シークレット）
@@ -51,6 +53,14 @@ make tf-apply
 python3 scripts/ops/upload_doc.py data/sample/
 make ingestion-run
 python3 scripts/ops/query.py "有給休暇の申請手続きを教えてください"
+```
+
+### RAG品質評価
+
+```bash
+make eval                  # hybrid検索で評価実行
+make eval-baseline         # ベースライン記録
+make eval-search-patterns  # vector / ES / hybrid 3パターン比較
 ```
 
 ### デプロイ・テスト

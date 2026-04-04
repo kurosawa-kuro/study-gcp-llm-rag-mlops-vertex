@@ -7,6 +7,12 @@
 # credentials は env/secret/ で一元管理（env/ 自体が除外対象）
 .terraform.lock.hcl
 
+# Pipeline artifacts
+eval_pipeline.json
+
+# Eval results
+scripts/eval/results/*.json
+
 # ML outputs
 outputs/
 mlruns/

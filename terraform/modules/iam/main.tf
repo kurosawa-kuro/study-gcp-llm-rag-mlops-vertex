@@ -22,9 +22,9 @@ resource "google_project_iam_member" "bq_job_user" {
 
 # --- GCS ---
 
-resource "google_storage_bucket_iam_member" "gcs_reader" {
+resource "google_storage_bucket_iam_member" "gcs_admin" {
   bucket = var.bucket_name
-  role   = "roles/storage.objectViewer"
+  role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.doc_qa_runner.email}"
 }
 

@@ -149,3 +149,75 @@ resource "google_cloud_scheduler_job" "ingestion_schedule" {
 
   depends_on = [google_cloud_run_v2_job.ingestion]
 }
+
+# === RAG評価パイプライン ===
+
+# 評価用 Docker イメージで直接評価を実行する Cloud Run Job
+resource "google_cloud_run_v2_job" "eval" {
+  name     = "doc-qa-eval"
+  location = var.region
+
+  template {
+    template {
+      containers {
+        image = "${var.image_base}/doc-qa-eval:latest"
+
+        args = ["--search-type", "hybrid", "--save-as", "scheduled",
+                "--gcs-upload", "gs://${var.bucket_name}/eval-results"]
+
+        env {
+          name  = "GCP_PROJECT"
+          value = var.project_id
+        }
+
+        env {
+          name  = "GCP_REGION"
+          value = var.region
+        }
+
+        env {
+          name  = "ES_SECRET_NAME"
+          value = var.es_secret_name
+        }
+
+        env {
+          name  = "GOOGLE_AI_STUDIO_API_KEY"
+          value = var.google_ai_studio_api_key
+        }
+
+        resources {
+          limits = {
+            memory = "2Gi"
+            cpu    = "2"
+          }
+        }
+      }
+
+      timeout         = "1800s"
+      service_account = var.service_account_email
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [template]
+  }
+}
+
+# 週次評価スケジュール（毎週日曜 22:00 JST）
+resource "google_cloud_scheduler_job" "eval_schedule" {
+  name      = "doc-qa-eval-schedule"
+  region    = var.region
+  schedule  = "0 22 * * 0"
+  time_zone = "Asia/Tokyo"
+
+  http_target {
+    uri         = "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.project_id}/jobs/doc-qa-eval:run"
+    http_method = "POST"
+
+    oauth_token {
+      service_account_email = var.service_account_email
+    }
+  }
+
+  depends_on = [google_cloud_run_v2_job.eval]
+}

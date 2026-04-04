@@ -147,6 +147,45 @@ qa-api-monitor:
 	python3 scripts/monitor/qa_api.py
 
 # =====================================================================
+# 評価（RAG品質評価）
+# =====================================================================
+.PHONY: eval eval-baseline eval-search-patterns
+
+EVAL_DIR := scripts/eval
+
+eval:  ## 評価実行（デフォルト: hybrid検索）
+	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/evaluate.py
+
+eval-baseline:  ## ベースライン記録
+	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/evaluate.py --save-as baseline
+
+eval-search-patterns:  ## 検索パターン比較（vector / elasticsearch / hybrid）
+	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/evaluate.py --search-type vector --save-as vector
+	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/evaluate.py --search-type elasticsearch --save-as elasticsearch
+	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/evaluate.py --search-type hybrid --save-as hybrid
+	PYTHONPATH=shared:src/doc-qa/api python3 $(EVAL_DIR)/report.py --results $(EVAL_DIR)/results/vector_*.json $(EVAL_DIR)/results/elasticsearch_*.json $(EVAL_DIR)/results/hybrid_*.json
+
+# =====================================================================
+# 評価パイプライン（Vertex AI Pipeline）
+# =====================================================================
+.PHONY: eval-pipeline-build eval-pipeline-push eval-pipeline-compile eval-pipeline-run
+
+EVAL_PIPELINE_DIR := src/doc-qa/pipeline
+EVAL_IMAGE := $(IMAGE_BASE)/doc-qa-eval:$(TAG)
+
+eval-pipeline-build:  ## 評価用Dockerイメージビルド
+	docker build -f $(EVAL_PIPELINE_DIR)/Dockerfile -t $(EVAL_IMAGE) .
+
+eval-pipeline-push: eval-pipeline-build  ## 評価イメージをpush
+	docker push $(EVAL_IMAGE)
+
+eval-pipeline-compile:  ## パイプラインをJSONにコンパイル
+	cd $(EVAL_PIPELINE_DIR) && pip install -q -r requirements.txt && python run_pipeline.py compile
+
+eval-pipeline-run: eval-pipeline-push  ## パイプラインをコンパイルして実行
+	cd $(EVAL_PIPELINE_DIR) && pip install -q -r requirements.txt && python run_pipeline.py run
+
+# =====================================================================
 # 統合コマンド
 # =====================================================================
 .PHONY: deploy-all destroy-all deploy test help
@@ -190,3 +229,14 @@ help:
 	@echo "  make qa-api-logs        ログ確認"
 	@echo "  make qa-api-url         URL表示"
 	@echo "  make qa-api-monitor     健全性チェック"
+	@echo ""
+	@echo "=== 評価 ==="
+	@echo "  make eval               評価実行（hybrid検索）"
+	@echo "  make eval-baseline      ベースライン記録"
+	@echo "  make eval-search-patterns 検索パターン比較"
+	@echo ""
+	@echo "=== 評価パイプライン ==="
+	@echo "  make eval-pipeline-build    評価用Dockerイメージビルド"
+	@echo "  make eval-pipeline-push     イメージpush"
+	@echo "  make eval-pipeline-compile  パイプラインJSONコンパイル"
+	@echo "  make eval-pipeline-run      パイプライン実行"

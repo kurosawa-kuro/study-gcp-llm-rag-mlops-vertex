@@ -23,12 +23,13 @@ QA_API_IMAGE := $(IMAGE_BASE)/doc-qa-api:$(TAG)
 # Phase 2: tf-bootstrap   — Artifact Registry のみ先行作成
 # Phase 3: images-push    — 全 Docker イメージ build + push
 # Phase 4: tf-apply       — 全 GCP リソース作成（イメージは Phase 3 で push 済み）
-# Phase 5: post-infra     — BQ Vector Index + サンプルデータアップロード
-# Phase 6: ingestion-run  — 初回データ取込
+# Phase 5: upload-sample  — サンプルドキュメントを GCS にアップロード
+# Phase 6: ingestion-run  — データ取込（Embedding 生成 → BQ + ES 格納）
+# Phase 7: bq-vector-index — BQ Vector Index 作成（データ投入後でないと作成不可）
 # =====================================================================
 .PHONY: bootstrap prereqs images-push post-infra upload-sample
 
-bootstrap: prereqs gcp-setup tf-bootstrap images-push tf-apply post-infra ingestion-run  ## 全環境構築（冪等）
+bootstrap: prereqs gcp-setup tf-bootstrap images-push tf-apply upload-sample ingestion-run bq-vector-index  ## 全環境構築（冪等）
 	@echo "=== bootstrap 完了 ==="
 
 prereqs:
@@ -36,8 +37,6 @@ prereqs:
 	@python3 scripts/setup/terraform.py
 
 images-push: ingestion-push qa-api-push eval-pipeline-push  ## 全Dockerイメージ build + push
-
-post-infra: bq-vector-index upload-sample  ## tf-apply 後の追加セットアップ
 
 upload-sample:
 	@echo "=== サンプルドキュメントアップロード ==="
@@ -108,16 +107,22 @@ tf-apply-registry: tf-init
 tf-apply: tf-init
 	cd $(TF_DIR) && terraform apply -auto-approve -input=false
 
-bq-vector-index:  ## BigQuery Vector Index 作成（冪等）
+bq-vector-index:  ## BigQuery Vector Index 作成（冪等・5000行未満はスキップ）
 	@echo "=== BigQuery Vector Index 作成 ==="
 	@if bq query --project_id=$(PROJECT_ID) --use_legacy_sql=false --format=json \
 		"SELECT index_name FROM \`$(PROJECT_ID).$(BQ_DATASET).INFORMATION_SCHEMA.VECTOR_INDEXES\` WHERE index_name = 'embedding_index'" 2>/dev/null \
 		| grep -q 'embedding_index'; then \
 		echo "Vector Index embedding_index は既に存在します（スキップ）"; \
 	else \
-		echo "Vector Index embedding_index を作成します..."; \
-		bq query --project_id=$(PROJECT_ID) --use_legacy_sql=false \
-			"CREATE VECTOR INDEX IF NOT EXISTS embedding_index ON \`$(PROJECT_ID).$(BQ_DATASET).$(BQ_TABLE)\`(embedding) OPTIONS (distance_type = 'COSINE')"; \
+		ROW_COUNT=$$(bq query --project_id=$(PROJECT_ID) --use_legacy_sql=false --format=csv --quiet \
+			"SELECT COUNT(*) FROM \`$(PROJECT_ID).$(BQ_DATASET).$(BQ_TABLE)\`" 2>/dev/null | tail -1); \
+		if [ "$$ROW_COUNT" -ge 5000 ] 2>/dev/null; then \
+			echo "Vector Index embedding_index を作成します（$$ROW_COUNT 行）..."; \
+			bq query --project_id=$(PROJECT_ID) --use_legacy_sql=false \
+				"CREATE VECTOR INDEX IF NOT EXISTS embedding_index ON \`$(PROJECT_ID).$(BQ_DATASET).$(BQ_TABLE)\`(embedding) OPTIONS (index_type = 'IVF', distance_type = 'COSINE')"; \
+		else \
+			echo "行数が5000未満（$$ROW_COUNT 行）のため Vector Index 作成をスキップ（VECTOR_SEARCH は Index なしでも動作します）"; \
+		fi; \
 	fi
 
 tf-destroy: tf-init

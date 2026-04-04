@@ -1,0 +1,14 @@
+.git/
+.github/
+__pycache__/
+*.pyc
+.pytest_cache/
+.terraform/
+*.tfstate*
+terraform/credentials.json
+env/secret/
+notebooks/
+docs/
+data/
+*.md
+.env

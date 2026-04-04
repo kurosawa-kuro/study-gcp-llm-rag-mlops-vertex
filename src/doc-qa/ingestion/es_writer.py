@@ -8,8 +8,6 @@ from elasticsearch import Elasticsearch
 
 logger = logging.getLogger("doc-qa")
 
-INDEX_NAME = "doc-qa"
-
 INDEX_SETTINGS = {
     "mappings": {
         "properties": {
@@ -31,11 +29,11 @@ def create_es_client(cloud_url: str, api_key: str) -> Elasticsearch:
     return Elasticsearch(cloud_url, api_key=api_key)
 
 
-def ensure_index(es: Elasticsearch) -> None:
+def ensure_index(es: Elasticsearch, index_name: str) -> None:
     """インデックスが存在しない場合は作成する。"""
-    if not es.indices.exists(index=INDEX_NAME):
-        es.indices.create(index=INDEX_NAME, body=INDEX_SETTINGS)
-        logger.info(f"Elasticsearchインデックス作成: {INDEX_NAME}")
+    if not es.indices.exists(index=index_name):
+        es.indices.create(index=index_name, body=INDEX_SETTINGS)
+        logger.info(f"Elasticsearchインデックス作成: {index_name}")
 
 
 def write_chunks_to_es(
@@ -45,17 +43,13 @@ def write_chunks_to_es(
     gcs_path: str,
     chunks: list[dict],
     created_at: str,
+    index_name: str = "doc-qa",
 ) -> int:
-    """チャンクを Elasticsearch に登録する（冪等: doc_id で既存削除後に挿入）。
+    """チャンクを Elasticsearch に登録する（冪等）。"""
+    ensure_index(es, index_name)
 
-    Returns:
-        登録したドキュメント数
-    """
-    ensure_index(es)
-
-    # 冪等性: 同一 doc_id の既存ドキュメントを削除
     es.delete_by_query(
-        index=INDEX_NAME,
+        index=index_name,
         body={"query": {"term": {"doc_id": doc_id}}},
         conflicts="proceed",
     )
@@ -71,7 +65,7 @@ def write_chunks_to_es(
             "gcs_path": gcs_path,
             "created_at": created_at,
         }
-        es.index(index=INDEX_NAME, id=doc["id"], document=doc)
+        es.index(index=index_name, id=doc["id"], document=doc)
 
     logger.info(f"Elasticsearch登録完了: {len(chunks)} 件 (doc_id={doc_id})")
     return len(chunks)

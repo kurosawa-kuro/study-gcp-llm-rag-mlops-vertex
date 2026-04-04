@@ -1,21 +1,17 @@
 """QA API 健全性チェック + Discord通知"""
 
+import sys
 import urllib.request
-import subprocess
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "shared"))
 
-from core import setup_logging, load_env, notify_discord, REGION
-
-logger = setup_logging("doc-qa-monitor")
+from core import logger, load_env, gcloud, notify_discord, REGION
 
 
 def main() -> None:
     load_env()
 
-    result = subprocess.run(
-        f"gcloud run services describe doc-qa-api --region {REGION} --format 'value(status.url)'",
-        shell=True, capture_output=True, text=True,
-    )
-    url = result.stdout.strip()
+    url = gcloud(f"run services describe doc-qa-api --region {REGION} --format 'value(status.url)'")
     if not url:
         notify_discord("FAILED", "QA API URL取得失敗")
         return

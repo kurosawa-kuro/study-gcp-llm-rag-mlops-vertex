@@ -2,21 +2,17 @@
 
 from __future__ import annotations
 
-RRF_K = 60  # RRF 定数（標準的な値）
-
 
 def reciprocal_rank_fusion(
     vector_results: list[dict],
     fulltext_results: list[dict],
     top_k: int = 5,
-    k: int = RRF_K,
+    k: int = 60,
 ) -> list[dict]:
     """2つの検索結果を RRF でマージ・リランクする。
 
     RRF score = sum(1 / (k + rank_i))
-
-    Returns:
-        マージ・リランクされた結果リスト（上位 top_k 件）
+    k はデフォルト60。呼び出し元が application.yml の api.rrf_k を渡す。
     """
     scores: dict[str, float] = {}
     docs: dict[str, dict] = {}

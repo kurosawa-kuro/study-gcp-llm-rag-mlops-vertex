@@ -1,0 +1,56 @@
+# ============================================================
+# 社内ドキュメント QA システム - プロジェクト設定
+# ============================================================
+# 非シークレットのプロジェクト固有設定を一元管理する。
+# シークレット（APIキー等）は env/secret/ で管理。
+
+# --- GCP ---
+gcp:
+  project_id: mlops-dev-a
+  region: asia-northeast1
+
+# --- データ層 ---
+storage:
+  bucket_name: mlops-dev-a-doc-qa
+
+bigquery:
+  dataset: doc_qa_dataset
+  table: documents
+
+# --- Artifact Registry ---
+registry:
+  repo_name: mlops-dev-a-docker
+
+# --- Elasticsearch ---
+elasticsearch:
+  index_name: doc-qa
+  deployment_name: doc-qa-es
+  secret_name: elastic-cloud-api-key
+
+# --- Ingestion ---
+ingestion:
+  chunk_size: 800
+  chunk_overlap: 50
+  embedding_model: text-multilingual-embedding-002
+  embedding_batch_size: 100
+  supported_extensions:
+    - .pdf
+    - .docx
+    - .doc
+    - .txt
+
+# --- QA API ---
+api:
+  gemini_model: gemini-2.0-flash
+  default_top_k: 5
+  rrf_k: 60
+  version: 1.0.0
+
+# --- Scheduler ---
+scheduler:
+  cron: "0 9 * * *"
+  timezone: Asia/Tokyo
+
+# --- 監視 ---
+monitoring:
+  discord_enabled: false

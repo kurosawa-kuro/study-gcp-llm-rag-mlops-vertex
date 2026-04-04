@@ -26,55 +26,52 @@ GCPプロジェクト: `mlops-dev-a`、リージョン: `asia-northeast1`
   └── 毎日 9:00 JST に自動Ingestion実行
             ↓
 [Cloud Run Service（QA API）]
-  ├── POST /query  - 質問受信
-  ├── Vertex AI Embedding でクエリベクトル化
-  ├── ハイブリッド検索
-  │    ├── BigQuery Vector Search（意味検索 Top-5）
-  │    └── Elasticsearch 全文検索（kuromoji キーワード検索 Top-5）
-  ├── RRF（Reciprocal Rank Fusion）リランク
-  ├── プロンプト組み立て
-  └── Vertex AI Gemini で回答生成
-            ↓
-[レスポンス]
-  └── 回答文 + 根拠ドキュメント + 該当箇所
-
-[Elastic Cloud]
-  ├── Elasticsearch（kuromoji日本語全文検索）
-  └── Kibana（管理UI）
-
-[GitHub Actions]
-  ├── doc-qa: main push(src/doc-qa) → test → build → push → deploy
-  └── terraform: main push(terraform) → plan → apply
+  ├── POST /query → ハイブリッド検索 → RRFリランク → Gemini回答生成
+  ├── POST /ingest → Cloud Run Jobs API で Ingestion Job 非同期実行
+  └── GET /health → ヘルスチェック
 ```
 
-- **src/doc-qa/ingestion/**: Cloud Run Job - GCS取得→テキスト抽出→チャンク分割→Embedding→BigQuery/Elasticsearch格納
-- **src/doc-qa/api/**: Cloud Run Service - FastAPI QA API（ハイブリッド検索→RRFリランク→Gemini回答生成）
-- **src/elastic-search/**: Elastic Cloud接続確認用（PoC）
-- **terraform/**: GCS, BigQuery, Cloud Run (Job/Service), Artifact Registry, Cloud Scheduler, Elastic Cloud, Secret Manager, IAM のIaC定義（統合済み）
-- **scripts/**: 共通ユーティリティ(core.py)、監視(Ingestion/API)、アップロード、クエリテスト
-- **data/sample/**: サンプル社内規定ドキュメント（就業規則、経費精算規定、FAQ）
-- **docs/**: 仕様・設計書、移行ロードマップ
+- **src/doc-qa/ingestion/**: Cloud Run Job - ドキュメント取込パイプライン
+- **src/doc-qa/api/**: Cloud Run Service - FastAPI QA API
+- **scripts/config.py**: 共通設定ローダー（application.yml キャッシュ・ロギング）
+- **scripts/core.py**: 共通ユーティリティ（Discord通知・env読み込み・dispatch）
+- **terraform/**: GCP + Elastic Cloud IaC（モジュール分離: data/compute/elastic/registry/iam）
+- **env/config/application.yml**: プロジェクト固有設定（非シークレット）の唯一の定義元
+- **env/secret/credentials.yml**: 全クレデンシャル統合
+- **data/sample/**: サンプル社内規定ドキュメント
+
+## Config Architecture
+
+```
+env/config/application.yml    ← 全設定の唯一の定義元（Single Source of Truth）
+        ↓
+scripts/config.py             ← 唯一の設定ローダー（キャッシュ付き）
+        ↓
+    ┌───┴───────────────┐
+    ↓                   ↓
+ingestion/main.py     api/main.py      ← from config import get, setup_logging
+scripts/core.py       scripts/es_*.py  ← from config import get
+```
+
+設定解決の優先順位: **環境変数 > application.yml > ハードコードデフォルト**
+コンテナ内では `CONFIG_PATH` 環境変数でYAMLパスをオーバーライド。
 
 ## Tech Stack
 
 - **LLM/RAG**: Vertex AI Embedding API, Vertex AI Gemini, BigQuery Vector Search
-- **検索**: Elasticsearch（kuromoji日本語全文検索）+ BigQuery Vector Search（意味検索）のハイブリッド
+- **検索**: Elasticsearch（kuromoji）+ BigQuery Vector Search のハイブリッド
 - **API**: FastAPI (Cloud Run Service)
-- **ドキュメント処理**: PyMuPDF, python-docx
-- **Data**: BigQuery（ドキュメントチャンク + Embedding格納）, GCS（ドキュメント格納）
-- **Infra**: Cloud Run (Job/Service), Artifact Registry, Cloud Scheduler, Secret Manager
-- **IaC**: Terraform（GCP + Elastic Cloud）
+- **IaC**: Terraform（モジュール分離: data/compute/elastic/registry/iam）
 - **CI/CD**: GitHub Actions（doc-qa + Terraform）
-- **監視**: Discord通知（Ingestion監視・API健全性）
+- **監視**: Discord通知
 - **ログ**: JSON構造化ログ（Cloud Logging互換）
 
-## GCP Setup
+## Docker Build
 
+build context はプロジェクトルート。`-f` で Dockerfile を指定:
 ```bash
-gcloud init
-gcloud config set compute/region asia-northeast1
-gcloud config set run/region asia-northeast1
-gcloud services enable aiplatform.googleapis.com
+docker build -f src/doc-qa/api/Dockerfile -t doc-qa-api .
+docker build -f src/doc-qa/ingestion/Dockerfile -t doc-qa-ingestion .
 ```
 
 ## Language

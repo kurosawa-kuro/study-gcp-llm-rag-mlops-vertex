@@ -15,17 +15,7 @@ def generate_embeddings(
     batch_size: int = 100,
     task_type: str = "RETRIEVAL_DOCUMENT",
 ) -> list[list[float]]:
-    """テキストリストをバッチでベクトル化する。
-
-    Args:
-        texts: ベクトル化するテキストのリスト
-        model_name: application.yml の ingestion.embedding_model から渡される
-        batch_size: application.yml の ingestion.embedding_batch_size から渡される
-        task_type: RETRIEVAL_DOCUMENT（Ingestion時）または RETRIEVAL_QUERY（検索時）
-
-    Returns:
-        各テキストに対応する Embedding ベクトルのリスト（768次元）
-    """
+    """テキストリストをバッチでベクトル化する。"""
     model = TextEmbeddingModel.from_pretrained(model_name)
     all_embeddings: list[list[float]] = []
 

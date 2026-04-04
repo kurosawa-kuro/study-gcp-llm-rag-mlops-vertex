@@ -3,23 +3,13 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
-import yaml
+from config import get
 from vertexai.generative_models import GenerativeModel
 
 logger = logging.getLogger("doc-qa")
 
-CONFIG_PATH = Path(__file__).resolve().parent.parent.parent.parent / "env" / "config" / "application.yml"
-
-
-def _get_model_name() -> str:
-    if CONFIG_PATH.exists():
-        with open(CONFIG_PATH, encoding="utf-8") as f:
-            cfg = yaml.safe_load(f)
-        return cfg.get("api", {}).get("gemini_model", "gemini-2.0-flash")
-    return "gemini-2.0-flash"
-
+_MODEL_NAME = get("api.gemini_model", "gemini-2.0-flash")
 
 SYSTEM_PROMPT = """あなたは社内ドキュメントの専門家です。
 以下のドキュメントのみを根拠として日本語で正確に回答してください。
@@ -37,16 +27,14 @@ def generate_answer(query: str, context_docs: list[dict]) -> str:
 【質問】
 {query}"""
 
-    model = GenerativeModel(_get_model_name())
+    model = GenerativeModel(_MODEL_NAME)
     response = model.generate_content(prompt)
-
     answer = response.text
     logger.info(f"回答生成完了: {len(answer)} 文字")
     return answer
 
 
 def _build_context(docs: list[dict]) -> str:
-    """検索結果をプロンプト用のコンテキスト文字列に変換する。"""
     parts = []
     for i, doc in enumerate(docs, 1):
         source = doc.get("doc_name", "不明")

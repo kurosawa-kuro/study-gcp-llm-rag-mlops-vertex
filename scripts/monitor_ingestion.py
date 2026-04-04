@@ -1,25 +1,22 @@
 """Ingestion Job 実行結果監視 + Discord通知"""
 
-from core import setup_logging, load_env, notify_discord, REGION
+import json
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "shared"))
 
-logger = setup_logging("doc-qa-monitor")
+from core import logger, load_env, gcloud, notify_discord, REGION
 
 
 def main() -> None:
     load_env()
-    import subprocess
-    import json
 
-    result = subprocess.run(
-        f"gcloud run jobs executions list --job doc-qa-ingestion --region {REGION} --limit 1 --format json",
-        shell=True, capture_output=True, text=True,
-    )
-
-    if result.returncode != 0:
+    output = gcloud(f"run jobs executions list --job doc-qa-ingestion --region {REGION} --limit 1 --format json")
+    if not output:
         notify_discord("FAILED", "Ingestion Job 実行履歴取得失敗")
         return
 
-    executions = json.loads(result.stdout or "[]")
+    executions = json.loads(output)
     if not executions:
         logger.info("実行履歴なし")
         return

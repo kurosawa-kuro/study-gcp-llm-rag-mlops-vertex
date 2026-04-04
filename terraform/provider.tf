@@ -14,7 +14,7 @@ terraform {
 }
 
 locals {
-  credentials = jsondecode(file("${path.module}/../env/secret/credentials.json"))
+  credentials = yamldecode(file("${path.module}/../env/secret/credentials.yml"))
 }
 
 provider "google" {

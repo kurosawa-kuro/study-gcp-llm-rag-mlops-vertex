@@ -1,6 +1,6 @@
 # RAG評価基盤 設計書
 
-プロジェクト: multicloud-mlops-llm-platform / study-gcp-llm-rag-mlops-vertex
+プロジェクト: study-gcp-llm-rag-mlops-vertex
 最終更新: 2026-04-04
 
 ---
@@ -13,8 +13,7 @@
 動いているRAGシステムの品質を定量化する
 
 ・現状のベースラインを数値として記録する
-・ELECTRA差し替え後との比較基準を作る
-・ハイブリッド検索（Vector + ES）の効果を定量化する
+・検索パターン（Vector / ES / Hybrid）の効果を定量化する
 ・業務提案時の根拠数値として使う
 ```
 
@@ -27,7 +26,7 @@ Layer1: 検索品質評価（Retrieval評価）
 
 Layer2: 回答品質評価（Generation評価）
   └── 生成された回答が正解と一致するか
-  └── 指標: Exact Match / ROUGE-L / LLM-as-Judge
+  └── 指標: Exact Match / ROUGE-L
 ```
 
 ---
@@ -100,37 +99,22 @@ Layer2: 回答品質評価（Generation評価）
   └── 長い回答の品質評価に適している
 ```
 
-#### LLM-as-Judge（Phase2で導入）
-
-```text
-定義
-  └── Geminiに回答の品質を1-5点で採点させる
-
-用途
-  └── 人間の感覚に近い品質評価
-  └── Exact MatchやROUGEでは測れない
-      回答の自然さ・有用性を評価
-
-Phase1では省略
-  └── コストがかかる（Gemini呼び出し回数が増える）
-  └── まずRecall@KとMRRで土台を作る
-```
-
 ---
 
-## 3. 評価データ設計
+## 3. 実装済み
 
 ### ディレクトリ構成
 
 ```text
 scripts/eval/
-  ├── queries_eval.jsonl      # 評価クエリ + Ground Truth
-  ├── evaluate.py             # 評価スクリプト（メイン）
-  ├── metrics.py              # 指標計算ロジック
-  ├── report.py               # 結果レポート生成
-  └── results/                # 評価結果の保存先
-       ├── baseline_YYYYMMDD.json   # ベースライン結果
-       └── electra_YYYYMMDD.json    # ELECTRA差し替え後結果
+  ├── evaluate.py             # メイン評価スクリプト（--search-type / --save-as / --top-k）
+  ├── metrics.py              # 指標計算（recall_at_k / mrr / exact_match / rouge_l）
+  ├── report.py               # 横並び比較レポート生成
+  ├── queries_eval.jsonl      # 評価クエリ20件 + Ground Truth
+  ├── results/                # 評価結果 JSON 保存先
+  └── tests/
+       ├── test_metrics.py    # 単体テスト（26件）
+       └── test_report.py     # 単体テスト（7件）
 ```
 
 ### queries_eval.jsonl の設計
@@ -144,8 +128,6 @@ scripts/eval/
   "relevant_keywords": ["年次有給休暇", "申請", "営業日"]
 }
 ```
-
-#### フィールド定義
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
@@ -168,137 +150,79 @@ scripts/eval/
   └── 実務的な評価に近い
 ```
 
-### サンプルクエリセット（20件）
+### Makefile コマンド
 
-```text
-就業規則関連（7件）
-  q001: 有給休暇の申請手続きを教えてください
-  q002: リモートワークは何日まで可能ですか
-  q003: 遅刻した場合の扱いはどうなりますか
-  q004: 勤務時間は何時から何時ですか
-  q005: 残業の申請方法を教えてください
-  q006: 育児休業は取得できますか
-  q007: 試用期間はどのくらいですか
-
-経費精算関連（7件）
-  q008: 交通費の精算方法を教えてください
-  q009: 出張旅費の上限はいくらですか
-  q010: 領収書が必要な金額の基準は何円ですか
-  q011: 経費精算の締め日はいつですか
-  q012: 接待費の申請方法を教えてください
-  q013: タクシー代は経費になりますか
-  q014: 海外出張の日当はいくらですか
-
-FAQ関連（6件）
-  q015: パソコンが壊れた場合はどうすればいいですか
-  q016: 社員証を紛失した場合の手続きは
-  q017: 健康診断はいつ受けられますか
-  q018: 社内Wi-Fiのパスワードはどこで確認できますか
-  q019: 退職時の手続きを教えてください
-  q020: 慶弔見舞金の申請方法を教えてください
+```bash
+make eval                  # hybrid検索で評価実行
+make eval-baseline         # ベースライン記録
+make eval-search-patterns  # vector / elasticsearch / hybrid 3パターン比較
 ```
-
----
-
-## 4. 評価スクリプト設計
 
 ### evaluate.py 処理フロー
 
 ```text
 1. queries_eval.jsonl を読み込む
-2. 各クエリで QA API に /query リクエスト
+2. 各クエリで検索モジュールを直接呼び出し（API経由ではない）
    └── top_k=10 で検索結果を取得
 3. 検索結果と Ground Truth を照合
    └── relevant_keywords が検索結果に含まれるか
 4. Recall@K / MRR を算出
-5. 回答と expected_answer_keywords を照合
-   └── Exact Match を算出
+5. Gemini で回答生成 → expected_answer_keywords と照合
+   └── Exact Match / ROUGE-L を算出
+   └── レートリミット時は自動リトライ（最大5回・指数バックオフ）
 6. 結果を JSON で保存
 7. サマリーをコンソール出力
 ```
 
-### metrics.py の関数設計
+### Gemini API レートリミット
 
-```python
-def recall_at_k(results: list, relevant_keywords: list, k: int) -> float:
-    """
-    Top-K結果にrelevant_keywordsを含むチャンクがあるか判定
-    """
-
-def mrr(results_list: list, relevant_keywords_list: list) -> float:
-    """
-    全クエリのMRRを算出
-    """
-
-def exact_match(answer: str, keywords: list) -> bool:
-    """
-    回答に全キーワードが含まれるか判定
-    """
-
-def rouge_l(answer: str, expected: str) -> float:
-    """
-    ROUGE-Lスコアを算出
-    """
+```text
+有料プラン化済み（無料枠の日次20回制約は解消）
+レートリミット到達時は evaluate.py が自動リトライする（最大5回・指数バックオフ）
 ```
 
-### 出力フォーマット（results/baseline_YYYYMMDD.json）
+---
 
-```json
-{
-  "timestamp": "2026-04-04T10:00:00",
-  "model": "Vertex AI Embedding + gemini-2.5-flash",
-  "search_type": "hybrid (vector + elasticsearch)",
-  "top_k": 10,
-  "num_queries": 20,
-  "retrieval": {
-    "recall@1": 0.40,
-    "recall@3": 0.65,
-    "recall@5": 0.80,
-    "recall@10": 0.90,
-    "mrr": 0.58
-  },
-  "generation": {
-    "exact_match": 0.75,
-    "rouge_l": 0.68
-  },
-  "per_query": [
-    {
-      "query_id": "q001",
-      "query": "有給休暇の申請手続きを教えてください",
-      "recall@5": 1,
-      "rank": 2,
-      "exact_match": true,
-      "answer": "有給休暇の申請は..."
-    }
-  ]
-}
+## 4. 検証済みベースライン（2026-04-04）
+
+サンプルデータ3文書・6チャンク / hybrid検索 / gemini-2.5-flash
+
+```
+┌─────────────┬────────┐
+│    指標     │ スコア │
+├─────────────┼────────┤
+│ Recall@1    │ 0.8000 │
+├─────────────┼────────┤
+│ Recall@3    │ 1.0000 │
+├─────────────┼────────┤
+│ Recall@5    │ 1.0000 │
+├─────────────┼────────┤
+│ Recall@10   │ 1.0000 │
+├─────────────┼────────┤
+│ MRR         │ 0.9000 │
+├─────────────┼────────┤
+│ Exact Match │ 0.6500 │
+├─────────────┼────────┤
+│ ROUGE-L     │ 0.2007 │
+└─────────────┴────────┘
+```
+
+```text
+注意
+  └── サンプルデータが少ないため検索品質は高く出ている
+  └── ROUGE-L が低いのは Gemini の回答が自然言語で冗長なため（文字レベルLCSの特性）
+  └── 本番データでは数値が変動する
+  └── 傾向の把握が目的・絶対値にこだわらない
 ```
 
 ---
 
 ## 5. 比較評価の設計
 
-### ベースライン vs ELECTRA 比較
+### ハイブリッド検索の効果検証（実装済み）
 
 ```text
-比較軸
-  ├── Vertex AI Embedding（現状）
-  └── ELECTRA ファインチューニング済みモデル（将来）
-
-比較レポート出力例
-
-  指標          ベースライン    ELECTRA差し替え    差分
-  ──────────────────────────────────────────────────
-  Recall@1      0.40           0.52              +0.12 ✅
-  Recall@5      0.80           0.88              +0.08 ✅
-  MRR           0.58           0.67              +0.09 ✅
-  Exact Match   0.75           0.78              +0.03 ✅
-```
-
-### ハイブリッド検索の効果検証
-
-```text
-3パターンを比較
+3パターンを比較（make eval-search-patterns）
 
   パターン1: Vector Searchのみ
   パターン2: Elasticsearchのみ
@@ -309,81 +233,29 @@ def rouge_l(answer: str, expected: str) -> float:
   └── これがElastic Cloud導入の定量的な根拠になる
 ```
 
----
-
-## 6. Makefile コマンド設計
-
-```makefile
-# 評価実行
-eval:
-    python scripts/eval/evaluate.py
-
-# ベースライン記録
-eval-baseline:
-    python scripts/eval/evaluate.py --save-as baseline
-
-# 比較レポート
-eval-compare:
-    python scripts/eval/report.py \
-        --before results/baseline_*.json \
-        --after results/electra_*.json
-
-# 検索パターン比較
-eval-search-patterns:
-    python scripts/eval/evaluate.py --search-type vector
-    python scripts/eval/evaluate.py --search-type elasticsearch
-    python scripts/eval/evaluate.py --search-type hybrid
-```
-
----
-
-## 7. 実装スケジュール
+### Embedding モデル比較（将来作業）
 
 ```text
-Day1: Ground Truth整備
-  ├── queries_eval.jsonl 作成（20件）
-  └── キーワード設計（relevant_keywords / expected_answer_keywords）
+比較軸
+  ├── text-multilingual-embedding-002（現状）
+  └── ELECTRA ファインチューニング済みモデル（将来検討）
 
-Day2: 評価スクリプト実装
-  ├── metrics.py（Recall@K / MRR / Exact Match）
-  ├── evaluate.py（メインフロー）
-  └── 動作確認
+比較レポート出力例
 
-Day3: ベースライン計測・比較
-  ├── ベースライン数値を記録
-  ├── 検索パターン比較（Vector / ES / Hybrid）
-  └── results/baseline_YYYYMMDD.json 保存
+  指標          ベースライン    ELECTRA差し替え    差分
+  ──────────────────────────────────────────────────
+  Recall@1      0.80           ?                 ?
+  Recall@5      1.00           ?                 ?
+  MRR           0.90           ?                 ?
+  Exact Match   0.65           ?                 ?
 
-Day4: レポート整備
-  ├── report.py（比較レポート生成）
-  └── Makefile コマンド追加
+現状の Recall@3=1.0 で検索品質は十分高い
+精度改善の必要性が出てから着手する
 ```
 
 ---
 
-## 8. 期待するベースライン数値
-
-```text
-現状構成（Vertex AI Embedding + Hybrid検索）での期待値
-
-Recall@5:  0.75〜0.85
-  └── サンプルデータが少ない（3ファイル）ので高めになる想定
-
-MRR: 0.55〜0.70
-  └── 日本語検索精度に依存
-
-Exact Match: 0.70〜0.80
-  └── Gemini 2.5 Flash の回答精度次第
-
-注意
-  └── サンプルデータが少ないため数値は高く出やすい
-  └── 本番データでは数値が下がる可能性がある
-  └── 傾向の把握が目的・絶対値にこだわらない
-```
-
----
-
-## 9. 業務への応用
+## 6. 業務への応用
 
 ```text
 この評価基盤が業務で直結する理由
@@ -405,20 +277,43 @@ Exact Match: 0.70〜0.80
 
 ---
 
-## 10. 将来の拡張
+## 7. 将来の拡張
+
+### 優先度 高（安定化後に着手）
 
 ```text
-Phase2: LLM-as-Judge導入
-  └── Geminiが回答品質を1-5点で採点
-  └── 人間の感覚に近い品質評価
+LLM-as-Judge 導入
+  └── Gemini が回答品質を1-5点で採点
+  └── Exact Match / ROUGE-L では測れない回答の自然さ・有用性を評価
+  └── Gemini API 有料プラン化が前提（無料枠では呼び出し回数が不足）
 
-Phase3: BigQueryへの評価結果蓄積
-  └── 評価履歴をBigQueryに保存
+本番データでの再評価
+  └── サンプル3文書ではなく実ドキュメントで評価
+  └── BQ Vector Index が有効になる規模（5000行以上）でのベースライン計測
+```
+
+### 優先度 中
+
+```text
+BigQuery への評価結果蓄積
+  └── 評価履歴を BigQuery に保存
   └── 時系列での品質変化を追跡
-  └── Vertex AI Pipelineの品質ゲートに統合
+  └── Vertex AI Pipeline の品質ゲートに統合
 
-Phase4: 自動評価Pipeline
-  └── 新モデルデプロイ時に自動評価実行
-  └── ベースラインより劣化したら自動ロールバック
-  └── Champion/Challenger の完成形
+E2E 評価の CI 組み込み
+  └── deploy-all 後に自動で make eval を実行
+  └── ベースラインより劣化したらアラート
+```
+
+### 優先度 低（将来検討）
+
+```text
+ELECTRA 差し替え比較
+  └── ドメイン特化 Embedding への差し替え
+  └── 現状の text-multilingual-embedding-002 で Recall@3=1.0 のため緊急性なし
+  └── 本番データで精度不足が判明した場合に検討
+
+Vertex AI Gemini への切替
+  └── コンソール同意が必要で現状不可
+  └── Google AI Studio で十分動作しており緊急性なし
 ```

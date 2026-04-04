@@ -2,6 +2,10 @@
 
 検索品質（Recall@K / MRR）と回答品質（Exact Match / ROUGE-L）を評価する。
 検索モジュールを直接呼び出し、APIを経由しない。
+
+注意: Gemini API 無料枠は日次20リクエスト/分次5リクエスト（gemini-2.5-flash）。
+評価クエリ20件の完走には無料枠1日分を消費する。
+レートリミット到達時は自動リトライする（最大5回・指数バックオフ）。
 """
 
 from __future__ import annotations
@@ -10,6 +14,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -138,7 +143,17 @@ def main() -> None:
 
         recalls = {f"recall@{k}": recall_at_k(results, relevant_keywords, k) for k in K_VALUES}
 
-        answer = generate_answer(query_text, results)
+        for attempt in range(1, 6):
+            try:
+                answer = generate_answer(query_text, results)
+                break
+            except Exception as e:
+                if ("429" in str(e) or "RESOURCE_EXHAUSTED" in str(e)) and attempt < 5:
+                    wait = 15 * attempt
+                    logger.warning(f"レートリミット到達、{wait}秒待機 (attempt {attempt}/5)")
+                    time.sleep(wait)
+                else:
+                    raise
         em = exact_match(answer, expected_keywords)
 
         reference = " ".join(expected_keywords)

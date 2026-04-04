@@ -1,4 +1,8 @@
-"""Google AI Studio Gemini 回答生成モジュール"""
+"""Google AI Studio Gemini 回答生成モジュール
+
+注意: 無料枠は日次20リクエスト/分次5リクエスト（gemini-2.5-flash）。
+Cloud Run 上では環境変数 GOOGLE_AI_STUDIO_API_KEY で認証する。
+"""
 
 from __future__ import annotations
 

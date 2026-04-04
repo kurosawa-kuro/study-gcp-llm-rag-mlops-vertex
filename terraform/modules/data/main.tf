@@ -31,7 +31,5 @@ resource "google_bigquery_table" "documents" {
   ])
 }
 
-# NOTE: BigQuery Vector Index は Terraform 未対応のため、手動で以下を実行する:
-# CREATE VECTOR INDEX embedding_index
-# ON doc_qa_dataset.documents(embedding)
-# OPTIONS (distance_type = 'COSINE');
+# NOTE: BigQuery Vector Index は Terraform 未対応のため、Makefile の bq-vector-index ターゲットで作成する
+# （make deploy-all で自動実行される）

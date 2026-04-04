@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from contextlib import asynccontextmanager
 
 import vertexai
@@ -67,16 +68,32 @@ bq_client: bigquery.Client | None = None
 es_client: Elasticsearch | None = None
 
 
-def _get_es_client() -> Elasticsearch:
-    """Secret Manager から接続情報を取得して ES クライアントを返す。"""
+def _get_es_client(max_retries: int = 18, wait_seconds: int = 10) -> Elasticsearch:
+    """Secret Manager から接続情報を取得して ES クライアントを返す（リトライ付き）。
+
+    初回デプロイ時は Secret Version 未作成や Elastic Cloud 起動途中の場合があるため、
+    Secret 読み取り〜ES 接続確認まで全体をリトライする（最大3分間）。
+    """
     sm = secretmanager.SecretManagerServiceClient()
     name = f"projects/{GCP_PROJECT}/secrets/{ES_SECRET_NAME}/versions/latest"
-    response = sm.access_secret_version(request={"name": name})
-    secret = json.loads(response.payload.data.decode("utf-8"))
-    return Elasticsearch(
-        secret["cloud_url"],
-        basic_auth=(secret["username"], secret["password"]),
-    )
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = sm.access_secret_version(request={"name": name})
+            secret = json.loads(response.payload.data.decode("utf-8"))
+            client = Elasticsearch(
+                secret["cloud_url"],
+                basic_auth=(secret["username"], secret["password"]),
+            )
+            client.info()
+            logger.info(f"Elasticsearch 接続成功 (attempt {attempt})")
+            return client
+        except Exception as e:
+            if attempt == max_retries:
+                logger.error(f"Elasticsearch 接続��敗（リトライ上限）: {e}")
+                raise
+            logger.warning(f"ES 接続待機 ({attempt}/{max_retries}): {e}")
+            time.sleep(wait_seconds)
 
 
 @asynccontextmanager

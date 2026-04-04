@@ -1,0 +1,1 @@
+- [自動化したら手順書から消す](feedback_auto_removes_manual.md) — 自動化した手順は運用ドキュメントから削除、残さない

@@ -48,6 +48,9 @@ module "iam" {
 }
 
 # --- コンピュート層（Cloud Run + Scheduler）---
+# depends_on: elastic モジュール全体（ec_deployment + Secret Version 書込み）の
+# 完了を待ってから Cloud Run Service を作成する。secret_name だけでは
+# ec_deployment の完了を待てない（Secret リソース自体は2秒で作成されるため）。
 module "compute" {
   source = "./modules/compute"
 
@@ -59,4 +62,6 @@ module "compute" {
   es_secret_name        = module.elastic.secret_name
   service_account_email = module.iam.service_account_email
   google_ai_studio_api_key        = var.google_ai_studio_api_key
+
+  depends_on = [module.elastic]
 }

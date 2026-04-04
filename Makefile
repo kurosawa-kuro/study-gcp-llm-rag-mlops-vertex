@@ -4,6 +4,8 @@ REGION := asia-northeast1
 REPO := mlops-dev-a-docker
 TAG := latest
 BUCKET := mlops-dev-a-doc-qa
+BQ_DATASET := doc_qa_dataset
+BQ_TABLE := documents
 IMAGE_BASE := $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(REPO)
 TF_DIR := terraform
 TF_SA := terraform@$(PROJECT_ID).iam.gserviceaccount.com
@@ -15,11 +17,31 @@ QA_API_IMAGE := $(IMAGE_BASE)/doc-qa-api:$(TAG)
 
 # =====================================================================
 # ブートストラップ（冪等・全自動・初回〜再実行すべて対応）
+#
+# Phase 0: prereqs        — gcloud / terraform 存在確認・自動インストール
+# Phase 1: gcp-setup      — API 有効化 + SA 権限 + Docker 認証
+# Phase 2: tf-bootstrap   — Artifact Registry のみ先行作成
+# Phase 3: images-push    — 全 Docker イメージ build + push
+# Phase 4: tf-apply       — 全 GCP リソース作成（イメージは Phase 3 で push 済み）
+# Phase 5: post-infra     — BQ Vector Index + サンプルデータアップロード
+# Phase 6: ingestion-run  — 初回データ取込
 # =====================================================================
-.PHONY: bootstrap
+.PHONY: bootstrap prereqs images-push post-infra upload-sample
 
-bootstrap: gcp-setup tf-bootstrap ingestion-push qa-api-push tf-apply  ## 全環境構築（冪等）
+bootstrap: prereqs gcp-setup tf-bootstrap images-push tf-apply post-infra ingestion-run  ## 全環境構築（冪等）
 	@echo "=== bootstrap 完了 ==="
+
+prereqs:
+	@python3 scripts/setup/gcp.py
+	@python3 scripts/setup/terraform.py
+
+images-push: ingestion-push qa-api-push eval-pipeline-push  ## 全Dockerイメージ build + push
+
+post-infra: bq-vector-index upload-sample  ## tf-apply 後の追加セットアップ
+
+upload-sample:
+	@echo "=== サンプルドキュメントアップロード ==="
+	@python3 scripts/ops/upload_doc.py data/sample/
 
 # =====================================================================
 # GCPセットアップ（全て冪等）
@@ -63,8 +85,7 @@ gcp-setup: gcp-setup-apis gcp-setup-sa gcp-setup-vertex gcp-setup-docker
 # =====================================================================
 # Terraform（冪等・import付き）
 # =====================================================================
-.PHONY: tf-init tf-plan tf-apply tf-apply-registry tf-bootstrap tf-destroy tf-fmt tf-validate
-
+.PHONY: tf-init tf-plan tf-apply tf-apply-registry tf-bootstrap tf-destroy tf-fmt tf-validate bq-vector-index
 tf-init:
 	@cd $(TF_DIR) && terraform init -input=false > /dev/null 2>&1
 	@echo "Terraform init 完了"
@@ -87,8 +108,20 @@ tf-apply-registry: tf-init
 tf-apply: tf-init
 	cd $(TF_DIR) && terraform apply -auto-approve -input=false
 
+bq-vector-index:  ## BigQuery Vector Index 作成（冪等）
+	@echo "=== BigQuery Vector Index 作成 ==="
+	@if bq query --project_id=$(PROJECT_ID) --use_legacy_sql=false --format=json \
+		"SELECT index_name FROM \`$(PROJECT_ID).$(BQ_DATASET).INFORMATION_SCHEMA.VECTOR_INDEXES\` WHERE index_name = 'embedding_index'" 2>/dev/null \
+		| grep -q 'embedding_index'; then \
+		echo "Vector Index embedding_index は既に存在します（スキップ）"; \
+	else \
+		echo "Vector Index embedding_index を作成します..."; \
+		bq query --project_id=$(PROJECT_ID) --use_legacy_sql=false \
+			"CREATE VECTOR INDEX IF NOT EXISTS embedding_index ON \`$(PROJECT_ID).$(BQ_DATASET).$(BQ_TABLE)\`(embedding) OPTIONS (distance_type = 'COSINE')"; \
+	fi
+
 tf-destroy: tf-init
-	cd $(TF_DIR) && terraform destroy -input=false
+	cd $(TF_DIR) && terraform destroy -auto-approve -input=false
 
 tf-fmt:
 	cd $(TF_DIR) && terraform fmt -recursive

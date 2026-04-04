@@ -9,12 +9,23 @@ from elasticsearch import Elasticsearch
 logger = logging.getLogger("doc-qa")
 
 INDEX_SETTINGS = {
+    "settings": {
+        "analysis": {
+            "analyzer": {
+                "ja_kuromoji": {
+                    "type": "custom",
+                    "tokenizer": "kuromoji_tokenizer",
+                    "filter": ["kuromoji_baseform", "kuromoji_part_of_speech", "cjk_width", "lowercase"],
+                }
+            }
+        }
+    },
     "mappings": {
         "properties": {
             "id":          {"type": "keyword"},
             "doc_id":      {"type": "keyword"},
             "doc_name":    {"type": "keyword"},
-            "content":     {"type": "text", "analyzer": "standard"},
+            "content":     {"type": "text", "analyzer": "ja_kuromoji"},
             "chunk_index": {"type": "integer"},
             "page_number": {"type": "integer"},
             "gcs_path":    {"type": "keyword"},

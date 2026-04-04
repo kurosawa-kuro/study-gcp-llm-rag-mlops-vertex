@@ -21,6 +21,9 @@ resource "ec_deployment" "doc_qa" {
       size        = "1g"
       zone_count  = 1
     }
+    config = {
+      plugins = ["analysis-kuromoji"]
+    }
   }
 
   kibana = {

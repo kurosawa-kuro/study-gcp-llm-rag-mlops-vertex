@@ -3,6 +3,7 @@
 POST /query   - 質問に対して根拠付きで回答
 POST /ingest  - 指定GCSパスのドキュメントを手動Ingestion
 GET  /health  - ヘルスチェック
+GET  /        - React SPA フロントエンド
 """
 
 from __future__ import annotations
@@ -11,9 +12,12 @@ import json
 import os
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import vertexai
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from google.cloud import bigquery, secretmanager
 from elasticsearch import Elasticsearch
 from pydantic import BaseModel
@@ -110,6 +114,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="社内ドキュメント QA API", version=API_VERSION, lifespan=lifespan)
 
+# --- SPA 静的ファイル配信 ---
+_STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+if _STATIC_DIR.is_dir():
+    app.mount("/assets", StaticFiles(directory=_STATIC_DIR / "assets"), name="assets")
+
 
 @app.get("/health")
 def health():
@@ -176,3 +185,12 @@ def ingest_endpoint(req: IngestRequest):
     except Exception as e:
         logger.error(f"Ingestionエラー: {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- SPA キャッチオール（API パス以外は index.html を返す）---
+@app.get("/{path:path}")
+def spa_catchall(path: str):
+    index = _STATIC_DIR / "index.html"
+    if _STATIC_DIR.is_dir() and index.is_file():
+        return FileResponse(index)
+    return {"detail": "Frontend not built. Run: cd src/doc-qa/frontend && npm run build"}

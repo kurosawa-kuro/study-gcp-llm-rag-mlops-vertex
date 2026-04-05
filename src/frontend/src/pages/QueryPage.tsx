@@ -33,32 +33,32 @@ export default function QueryPage() {
   return (
     <div>
       <h2>QA</h2>
-      <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+      <form onSubmit={handleSubmit} className="mb-4">
+        <div className="form-row">
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="質問を入力..."
-            style={{ flex: 1, padding: 8, fontSize: 16, borderRadius: 4, border: '1px solid #ccc' }}
+            style={{ flex: 1 }}
           />
-          <select value={topK} onChange={(e) => setTopK(Number(e.target.value))} style={{ padding: 8 }}>
+          <select value={topK} onChange={(e) => setTopK(Number(e.target.value))}>
             {[3, 5, 10].map((k) => (
               <option key={k} value={k}>Top {k}</option>
             ))}
           </select>
-          <button type="submit" disabled={loading} style={{ padding: '8px 20px', fontSize: 16 }}>
+          <button type="submit" disabled={loading} className="btn btn-primary">
             {loading ? '...' : '検索'}
           </button>
         </div>
       </form>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="text-error">{error}</p>}
 
       {result && (
         <>
-          <div style={{ background: '#f8f9fa', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-            <h3 style={{ marginTop: 0 }}>回答</h3>
+          <div className="card mb-4">
+            <h3>回答</h3>
             <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{result.answer}</p>
           </div>
           <h3>根拠ドキュメント ({result.sources.length})</h3>

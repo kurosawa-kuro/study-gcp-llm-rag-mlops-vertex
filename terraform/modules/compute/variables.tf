@@ -32,3 +32,8 @@ variable "google_ai_studio_api_key" {
   type        = string
   sensitive   = true
 }
+
+variable "image_tag" {
+  description = "Docker イメージタグ（git short SHA）"
+  type        = string
+}

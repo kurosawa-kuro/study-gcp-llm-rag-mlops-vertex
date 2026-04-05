@@ -2,7 +2,7 @@
 PROJECT_ID := mlops-dev-a
 REGION := asia-northeast1
 REPO := mlops-dev-a-docker
-TAG := latest
+TAG := $(shell git rev-parse --short HEAD)
 BUCKET := mlops-dev-a-doc-qa
 BQ_DATASET := doc_qa_dataset
 BQ_TABLE := documents
@@ -67,13 +67,13 @@ tf-import-registry: tf-init
 tf-bootstrap: tf-init tf-import-registry tf-apply-registry
 
 tf-plan: tf-init
-	cd $(TF_DIR) && terraform plan -input=false
+	cd $(TF_DIR) && terraform plan -input=false -var="image_tag=$(TAG)"
 
 tf-apply-registry: tf-init
 	cd $(TF_DIR) && terraform apply -auto-approve -input=false -target=module.registry
 
 tf-apply: tf-init
-	cd $(TF_DIR) && terraform apply -auto-approve -input=false
+	cd $(TF_DIR) && terraform apply -auto-approve -input=false -var="image_tag=$(TAG)"
 
 bq-vector-index:
 	@scripts/setup/bq_vector_index.sh $(PROJECT_ID) $(BQ_DATASET) $(BQ_TABLE)

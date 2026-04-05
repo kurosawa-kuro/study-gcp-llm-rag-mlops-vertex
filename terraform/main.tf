@@ -63,5 +63,7 @@ module "compute" {
   service_account_email = module.iam.service_account_email
   google_ai_studio_api_key        = var.google_ai_studio_api_key
 
+  image_tag                       = var.image_tag
+
   depends_on = [module.elastic]
 }

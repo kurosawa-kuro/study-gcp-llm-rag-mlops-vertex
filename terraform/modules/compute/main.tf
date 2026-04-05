@@ -7,7 +7,7 @@ resource "google_cloud_run_v2_job" "ingestion" {
   template {
     template {
       containers {
-        image = "${var.image_base}/doc-qa-ingestion:latest"
+        image = "${var.image_base}/doc-qa-ingestion:${var.image_tag}"
 
         env {
           name  = "GCP_PROJECT"
@@ -46,10 +46,6 @@ resource "google_cloud_run_v2_job" "ingestion" {
       service_account = var.service_account_email
     }
   }
-
-  lifecycle {
-    ignore_changes = [template]
-  }
 }
 
 resource "google_cloud_run_v2_service" "api" {
@@ -58,7 +54,7 @@ resource "google_cloud_run_v2_service" "api" {
 
   template {
     containers {
-      image = "${var.image_base}/doc-qa-api:latest"
+      image = "${var.image_base}/doc-qa-api:${var.image_tag}"
 
       ports {
         container_port = 8080
@@ -109,10 +105,6 @@ resource "google_cloud_run_v2_service" "api" {
 
     service_account = var.service_account_email
   }
-
-  lifecycle {
-    ignore_changes = [template]
-  }
 }
 
 # QA API を公開
@@ -160,7 +152,7 @@ resource "google_cloud_run_v2_job" "eval" {
   template {
     template {
       containers {
-        image = "${var.image_base}/doc-qa-eval:latest"
+        image = "${var.image_base}/doc-qa-eval:${var.image_tag}"
 
         args = ["--search-type", "hybrid", "--save-as", "scheduled",
                 "--gcs-upload", "gs://${var.bucket_name}/eval-results"]
@@ -196,10 +188,6 @@ resource "google_cloud_run_v2_job" "eval" {
       timeout         = "1800s"
       service_account = var.service_account_email
     }
-  }
-
-  lifecycle {
-    ignore_changes = [template]
   }
 }
 

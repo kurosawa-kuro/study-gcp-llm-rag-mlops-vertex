@@ -16,19 +16,25 @@ export default function EvalPage() {
       <h2>Eval Dashboard</h2>
 
       {health && (
-        <div style={{ background: '#f8f9fa', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-          <p><strong>API Status:</strong> {health.status}</p>
-          <p><strong>Version:</strong> {health.version}</p>
+        <div className="card mb-6">
+          <p>
+            <strong>API Status:</strong>{' '}
+            <span className="badge badge-success">{health.status}</span>
+          </p>
+          <p className="mb-2">
+            <strong>Version:</strong>{' '}
+            <span className="text-mono">{health.version}</span>
+          </p>
         </div>
       )}
 
-      <div style={{ background: '#fff8e1', borderRadius: 8, padding: 16 }}>
-        <h3 style={{ marginTop: 0 }}>最新評価結果（2026-04-04 / hybrid / kuromoji）</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div className="card">
+        <h3>最新評価結果（2026-04-04 / hybrid / kuromoji）</h3>
+        <table className="admin-table">
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', padding: 8, borderBottom: '2px solid #ddd' }}>指標</th>
-              <th style={{ textAlign: 'right', padding: 8, borderBottom: '2px solid #ddd' }}>スコア</th>
+              <th>指標</th>
+              <th className="text-right">スコア</th>
             </tr>
           </thead>
           <tbody>
@@ -42,15 +48,13 @@ export default function EvalPage() {
               ['ROUGE-L', '0.2117'],
             ].map(([name, value]) => (
               <tr key={name}>
-                <td style={{ padding: 8, borderBottom: '1px solid #eee' }}>{name}</td>
-                <td style={{ padding: 8, borderBottom: '1px solid #eee', textAlign: 'right', fontFamily: 'monospace' }}>
-                  {value}
-                </td>
+                <td>{name}</td>
+                <td className="text-right text-mono">{value}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <p style={{ color: '#888', fontSize: 13, marginTop: 12 }}>
+        <p className="text-secondary text-sm mt-4" style={{ marginBottom: 0 }}>
           将来的に /eval API を追加し、リアルタイムで評価結果を取得・表示する予定
         </p>
       </div>

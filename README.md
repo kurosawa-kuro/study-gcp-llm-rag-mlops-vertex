@@ -80,3 +80,9 @@ make help      # コマンド一覧
 cd src/frontend && npm run dev     # Vite dev server（API は 8080 にプロキシ）
 cd src/frontend && npm run build   # ビルド → src/api/static/ に出力
 ```
+
+
+
+https://github.com/user-attachments/assets/8d24cc27-797a-4fbd-bc0e-c41276a3b769
+
+
